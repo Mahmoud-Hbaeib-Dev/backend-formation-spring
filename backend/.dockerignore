@@ -1,0 +1,41 @@
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Scripts (sauf ceux nécessaires)
+scripts/deployment/
+
+# Data
+data/
+*.db
+*.mv.db
+
+# Tests
+src/test/
+
+

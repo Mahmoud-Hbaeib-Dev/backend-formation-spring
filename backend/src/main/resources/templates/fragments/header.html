@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ?: 'Centre de Formation'">Centre de Formation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <header th:fragment="header">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/admin/dashboard">
+                    <i class="bi bi-mortarboard"></i> Centre de Formation
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/dashboard">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/etudiants">
+                                <i class="bi bi-people"></i> Étudiants
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/formateurs">
+                                <i class="bi bi-person-badge"></i> Formateurs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/cours">
+                                <i class="bi bi-book"></i> Cours
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/inscriptions">
+                                <i class="bi bi-clipboard-check"></i> Inscriptions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/seances">
+                                <i class="bi bi-calendar-event"></i> Séances
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/notes">
+                                <i class="bi bi-file-earmark-text"></i> Notes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/sessions">
+                                <i class="bi bi-calendar3"></i> Sessions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/groupes">
+                                <i class="bi bi-people-fill"></i> Groupes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/planning">
+                                <i class="bi bi-calendar-week"></i> Planning
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/statistiques">
+                                <i class="bi bi-graph-up"></i> Statistiques
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-light">
+                                    <i class="bi bi-box-arrow-right"></i> Déconnexion
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+</body>
+</html>
+

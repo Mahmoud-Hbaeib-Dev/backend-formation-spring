@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">Formulaire Séance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+    
+    <main class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 th:text="${title}">Formulaire Séance</h4>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="${seance.id != null ? '/admin/seances/' + seance.id : '/admin/seances'}" 
+                              th:object="${seance}" method="post">
+                            
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date *</label>
+                                <input type="date" class="form-control" id="date" th:field="*{date}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="heure" class="form-label">Heure *</label>
+                                <input type="time" class="form-control" id="heure" th:field="*{heure}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="salle" class="form-label">Salle *</label>
+                                <input type="text" class="form-control" id="salle" th:field="*{salle}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="cours" class="form-label">Cours *</label>
+                                <select class="form-select" id="cours" th:field="*{cours.code}" required>
+                                    <option value="">Sélectionner un cours</option>
+                                    <option th:each="c : ${cours}" 
+                                            th:value="${c.code}" 
+                                            th:text="${c.titre}"></option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="formateur" class="form-label">Formateur *</label>
+                                <select class="form-select" id="formateur" th:field="*{formateur.id}" required>
+                                    <option value="">Sélectionner un formateur</option>
+                                    <option th:each="f : ${formateurs}" 
+                                            th:value="${f.id}" 
+                                            th:text="${f.nom}"></option>
+                                </select>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="/admin/seances" class="btn btn-secondary">Annuler</a>
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
+
