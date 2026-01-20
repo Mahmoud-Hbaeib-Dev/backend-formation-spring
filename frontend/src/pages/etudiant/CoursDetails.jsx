@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { coursService } from '../../services/coursService.js';
-import { seanceService } from '../../services/seanceService.js';
-import { noteService } from '../../services/noteService.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { coursApi, seancesApi, notesApi } from '../../utils/api.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, Calendar, Clock, MapPin, ArrowLeft, FileText, User } from 'lucide-react';
 
 const EtudiantCoursDetails = () => {
   const { code } = useParams();
+  const { user } = useAuth();
   const [cours, setCours] = useState(null);
   const [seances, setSeances] = useState([]);
   const [maNote, setMaNote] = useState(null);
@@ -16,24 +16,37 @@ const EtudiantCoursDetails = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const coursData = await coursService.getByCode(code);
-        setCours(coursData);
+        const coursResponse = await coursApi.getByCode(code);
+        setCours(coursResponse.data);
 
         // Charger les séances du cours
-        const seancesData = await seanceService.getByCours(code);
-        seancesData.sort((a, b) => {
-          const dateA = new Date(`${a.date}T${a.heure}`);
-          const dateB = new Date(`${b.date}T${b.heure}`);
-          return dateA - dateB;
-        });
+        const seancesResponse = await seancesApi.getByCours(code);
+        const seancesData = Array.isArray(seancesResponse.data) 
+          ? seancesResponse.data 
+          : Array.isArray(seancesResponse) 
+            ? seancesResponse 
+            : [];
+        if (Array.isArray(seancesData)) {
+          seancesData.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.heure}`);
+            const dateB = new Date(`${b.date}T${b.heure}`);
+            return dateA - dateB;
+          });
+        }
         setSeances(seancesData);
 
         // Charger ma note si elle existe
-        const savedUser = JSON.parse(localStorage.getItem('user'));
-        const etudiantId = savedUser?.etudiantId || savedUser?.userId || savedUser?.id;
+        const etudiantId = user?.etudiantId || user?.userId || user?.id;
         if (etudiantId) {
-          const notes = await noteService.getByEtudiant(etudiantId);
-          const noteCours = notes.find((n) => n.cours?.code === code);
+          const notesResponse = await notesApi.getByEtudiant(etudiantId);
+          const notes = Array.isArray(notesResponse.data) 
+            ? notesResponse.data 
+            : Array.isArray(notesResponse) 
+              ? notesResponse 
+              : [];
+          const noteCours = Array.isArray(notes) 
+            ? notes.find((n) => n.cours?.code === code) 
+            : null;
           setMaNote(noteCours);
         }
       } catch (error) {
@@ -46,7 +59,7 @@ const EtudiantCoursDetails = () => {
     if (code) {
       loadData();
     }
-  }, [code]);
+  }, [code, user]);
 
   if (loading) {
     return (

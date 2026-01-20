@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { seanceService } from '../../services/seanceService.js';
+import { seancesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 
@@ -15,14 +16,27 @@ const FormateurSeances = () => {
       try {
         const formateurId = user?.formateurId || user?.userId || user?.id;
         if (formateurId) {
-          const data = await seanceService.getByFormateur(formateurId);
+          const response = await seancesApi.getByFormateur(formateurId);
+          
+          // Parser la réponse si elle est une chaîne JSON
+          let data = parseJsonSafely(response.data);
+          if (!data) {
+            console.warn('⚠️ [FORMATEUR SEANCES] Impossible de parser les séances');
+            data = [];
+          } else {
+            console.log('✅ [FORMATEUR SEANCES] Séances parsées:', data);
+          }
+          
+          const seancesArray = Array.isArray(data) ? data : [];
           // Trier par date et heure
-          data.sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.heure}`);
-            const dateB = new Date(`${b.date}T${b.heure}`);
-            return dateA - dateB;
-          });
-          setSeances(data);
+          if (seancesArray.length > 0) {
+            seancesArray.sort((a, b) => {
+              const dateA = new Date(`${a.date}T${a.heure}`);
+              const dateB = new Date(`${b.date}T${b.heure}`);
+              return dateA - dateB;
+            });
+          }
+          setSeances(seancesArray);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des séances:', error);

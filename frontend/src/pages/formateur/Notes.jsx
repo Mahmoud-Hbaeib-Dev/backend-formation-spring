@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { coursService } from '../../services/coursService.js';
-import { noteService } from '../../services/noteService.js';
-import { etudiantService } from '../../services/etudiantService.js';
+import { formateursApi, notesApi, etudiantsApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, User, Plus } from 'lucide-react';
 
@@ -24,10 +23,15 @@ const FormateurNotes = () => {
       try {
         const formateurId = user?.formateurId || user?.userId || user?.id;
         if (formateurId) {
-          const coursData = await coursService.getByFormateur(formateurId);
-          setCours(coursData);
-          if (coursData.length > 0) {
-            setSelectedCours(coursData[0].code);
+          const response = await formateursApi.getCours(formateurId);
+          let coursData = parseJsonSafely(response.data);
+          if (!coursData) {
+            coursData = [];
+          }
+          const coursArray = Array.isArray(coursData) ? coursData : [];
+          setCours(coursArray);
+          if (coursArray.length > 0) {
+            setSelectedCours(coursArray[0].code);
           }
         }
       } catch (error) {
@@ -44,12 +48,25 @@ const FormateurNotes = () => {
     const loadNotes = async () => {
       if (selectedCours) {
         try {
-          const [notesData, etudiantsData] = await Promise.all([
-            noteService.getByCours(selectedCours),
-            etudiantService.getAll(),
+          const [notesResponse, etudiantsResponse] = await Promise.all([
+            notesApi.getByCours(selectedCours),
+            etudiantsApi.list(),
           ]);
-          setNotes(notesData);
-          setEtudiants(etudiantsData);
+          
+          let notesData = parseJsonSafely(notesResponse.data);
+          if (!notesData) {
+            notesData = [];
+          }
+          
+          let etudiantsData = parseJsonSafely(etudiantsResponse.data);
+          if (!etudiantsData) {
+            etudiantsData = [];
+          }
+          
+          const notesArray = Array.isArray(notesData) ? notesData : [];
+          const etudiantsArray = Array.isArray(etudiantsData) ? etudiantsData : [];
+          setNotes(notesArray);
+          setEtudiants(etudiantsArray);
         } catch (error) {
           console.error('Erreur lors du chargement des notes:', error);
         }
@@ -62,7 +79,7 @@ const FormateurNotes = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await noteService.attribuer(
+      await notesApi.attribuer(
         formData.etudiantId,
         selectedCours,
         parseFloat(formData.valeur)
@@ -70,8 +87,13 @@ const FormateurNotes = () => {
       setShowForm(false);
       setFormData({ etudiantId: '', valeur: '' });
       // Recharger les notes
-      const notesData = await noteService.getByCours(selectedCours);
-      setNotes(notesData);
+      const notesResponse = await notesApi.getByCours(selectedCours);
+      let notesData = parseJsonSafely(notesResponse.data);
+      if (!notesData) {
+        notesData = [];
+      }
+      const notesArray = Array.isArray(notesData) ? notesData : [];
+      setNotes(notesArray);
     } catch (error) {
       alert('Erreur lors de l\'attribution de la note: ' + (error.response?.data?.message || error.message));
     }

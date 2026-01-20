@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { coursService } from '../../services/coursService.js';
-import { seanceService } from '../../services/seanceService.js';
+import { formateursApi, seancesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import { BookOpen, Calendar, Users, TrendingUp } from 'lucide-react';
 import Layout from '../../components/Layout.jsx';
 
@@ -17,26 +17,51 @@ const FormateurDashboard = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Récupérer l'ID du formateur depuis le user
-        // Note: Vous devrez peut-être adapter selon votre structure
+        console.log('📊 [FORMATEUR DASHBOARD] user:', user);
         const formateurId = user?.formateurId || user?.userId || user?.id;
-        
+        console.log('📊 [FORMATEUR DASHBOARD] formateurId utilisé:', formateurId);
+
         if (formateurId) {
-          const [cours, seances] = await Promise.all([
-            coursService.getByFormateur(formateurId),
-            seanceService.getByFormateur(formateurId),
+          const [coursResponse, seancesResponse] = await Promise.all([
+            formateursApi.getCours(formateurId),
+            seancesApi.getByFormateur(formateurId),
           ]);
 
+          console.log('📚 [FORMATEUR DASHBOARD] Réponse cours:', coursResponse);
+          console.log('📅 [FORMATEUR DASHBOARD] Réponse séances:', seancesResponse);
+
+          // Parser les réponses si elles sont des chaînes JSON
+          let coursData = parseJsonSafely(coursResponse.data);
+          if (!coursData) {
+            console.warn('⚠️ [FORMATEUR DASHBOARD] Impossible de parser les cours');
+            coursData = [];
+          } else {
+            console.log('✅ [FORMATEUR DASHBOARD] Cours parsés:', coursData);
+          }
+
+          let seancesData = parseJsonSafely(seancesResponse.data);
+          if (!seancesData) {
+            console.warn('⚠️ [FORMATEUR DASHBOARD] Impossible de parser les séances');
+            seancesData = [];
+          } else {
+            console.log('✅ [FORMATEUR DASHBOARD] Séances parsées:', seancesData);
+          }
+
+          const cours = Array.isArray(coursData) ? coursData : [];
+          const seances = Array.isArray(seancesData) ? seancesData : [];
+
           const aujourdhui = new Date().toISOString().split('T')[0];
-          const seancesAujourdhui = seances.filter(
-            (s) => s.date === aujourdhui
-          ).length;
+          const seancesAujourdhui = Array.isArray(seances)
+            ? seances.filter((s) => s.date === aujourdhui).length
+            : 0;
 
           setStats({
             totalCours: cours.length,
             totalSeances: seances.length,
             seancesAujourdhui,
           });
+        } else {
+          console.warn('[FORMATEUR DASHBOARD] Aucun formateurId trouvé dans le user');
         }
       } catch (error) {
         console.error('Erreur lors du chargement des statistiques:', error);

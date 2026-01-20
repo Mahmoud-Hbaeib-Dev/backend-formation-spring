@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { coursService } from '../../services/coursService.js';
+import { formateursApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, Clock, Users } from 'lucide-react';
 
@@ -13,10 +14,27 @@ const FormateurCours = () => {
   useEffect(() => {
     const loadCours = async () => {
       try {
+        console.log('📚 [FORMATEUR COURS] user:', user);
         const formateurId = user?.formateurId || user?.userId || user?.id;
+        console.log('📚 [FORMATEUR COURS] formateurId utilisé:', formateurId);
+
         if (formateurId) {
-          const data = await coursService.getByFormateur(formateurId);
-          setCours(data);
+          const response = await formateursApi.getCours(formateurId);
+          console.log('📚 [FORMATEUR COURS] Réponse getCours:', response);
+          
+          // Parser la réponse si elle est une chaîne JSON
+          let data = parseJsonSafely(response.data);
+          if (!data) {
+            console.warn('⚠️ [FORMATEUR COURS] Impossible de parser les cours');
+            data = [];
+          } else {
+            console.log('✅ [FORMATEUR COURS] Cours parsés:', data);
+          }
+          
+          const coursArray = Array.isArray(data) ? data : [];
+          setCours(coursArray);
+        } else {
+          console.warn('[FORMATEUR COURS] Aucun formateurId trouvé dans le user');
         }
       } catch (error) {
         console.error('Erreur lors du chargement des cours:', error);

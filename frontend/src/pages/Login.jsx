@@ -14,56 +14,33 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🚀 [LOGIN PAGE] Soumission du formulaire');
-    console.log('📝 Données:', { login, password: password ? '***' : 'vide' });
-    
+
     setError('');
     setLoading(true);
 
     try {
-      console.log('🔄 [LOGIN PAGE] Appel de authLogin...');
       const response = await authLogin(login, password);
-      console.log('✅ [LOGIN PAGE] Connexion réussie!');
-      console.log('📦 Réponse complète:', response);
-      
       const role = response.roles?.[0];
-      console.log('👤 Rôle détecté:', role);
 
       // Rediriger selon le rôle
       if (role === 'ADMIN') {
-        console.log('➡️ Redirection vers /admin/dashboard');
         navigate('/admin/dashboard');
       } else if (role === 'FORMATEUR') {
-        console.log('➡️ Redirection vers /formateur/dashboard');
         navigate('/formateur/dashboard');
       } else if (role === 'ETUDIANT') {
-        console.log('➡️ Redirection vers /etudiant/dashboard');
         navigate('/etudiant/dashboard');
       } else {
-        console.log('⚠️ Rôle inconnu, redirection vers /dashboard');
         navigate('/dashboard');
       }
     } catch (err) {
-      console.error('❌ [LOGIN PAGE] Erreur lors de la connexion:');
-      console.error('📊 Status:', err.response?.status);
-      console.error('📝 Status Text:', err.response?.statusText);
-      console.error('💬 Message:', err.response?.data?.message);
-      console.error('🔴 Error:', err.response?.data?.error);
-      console.error('📦 Données complètes:', err.response?.data);
-      console.error('🌐 URL:', err.config?.url);
-      console.error('❌ Erreur complète:', err);
-      
       const errorMessage = 
         err.response?.data?.message || 
         err.response?.data?.error || 
         err.message ||
         'Email/nom d\'utilisateur ou mot de passe incorrect';
-      
-      console.error('💬 Message d\'erreur affiché:', errorMessage);
       setError(errorMessage);
     } finally {
       setLoading(false);
-      console.log('🏁 [LOGIN PAGE] Fin du processus de connexion');
     }
   };
 

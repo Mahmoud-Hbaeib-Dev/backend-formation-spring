@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { inscriptionService } from '../../services/inscriptionService.js';
-import { noteService } from '../../services/noteService.js';
-import { seanceService } from '../../services/seanceService.js';
+import { inscriptionsApi, notesApi, seancesApi } from '../../utils/api.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, FileText, Calendar, TrendingUp } from 'lucide-react';
 
@@ -23,13 +21,31 @@ const EtudiantDashboard = () => {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
         
         if (etudiantId) {
-          const [inscriptions, notes, seances] = await Promise.all([
-            inscriptionService.getByEtudiant(etudiantId),
-            noteService.getByEtudiant(etudiantId),
-            seanceService.getEmploiDuTempsEtudiant(etudiantId),
+          const [inscriptionsResponse, notesResponse, seancesResponse] = await Promise.all([
+            inscriptionsApi.getByEtudiant(etudiantId),
+            notesApi.getByEtudiant(etudiantId),
+            seancesApi.getEmploiDuTempsEtudiant(etudiantId),
           ]);
 
-          const inscriptionsActives = inscriptions.filter((i) => i.status === 'ACTIVE');
+          const inscriptions = Array.isArray(inscriptionsResponse.data) 
+            ? inscriptionsResponse.data 
+            : Array.isArray(inscriptionsResponse) 
+              ? inscriptionsResponse 
+              : [];
+          const notes = Array.isArray(notesResponse.data) 
+            ? notesResponse.data 
+            : Array.isArray(notesResponse) 
+              ? notesResponse 
+              : [];
+          const seances = Array.isArray(seancesResponse.data) 
+            ? seancesResponse.data 
+            : Array.isArray(seancesResponse) 
+              ? seancesResponse 
+              : [];
+
+          const inscriptionsActives = Array.isArray(inscriptions) 
+            ? inscriptions.filter((i) => i.status === 'ACTIVE') 
+            : [];
           const aujourdhui = new Date().toISOString().split('T')[0];
           const seancesAujourdhui = seances.filter((s) => s.date === aujourdhui).length;
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { inscriptionService } from '../../services/inscriptionService.js';
+import { inscriptionsApi } from '../../utils/api.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, CheckCircle, XCircle } from 'lucide-react';
 
@@ -15,8 +15,9 @@ const EtudiantCours = () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
         if (etudiantId) {
-          const data = await inscriptionService.getByEtudiant(etudiantId);
-          setInscriptions(data);
+          const response = await inscriptionsApi.getByEtudiant(etudiantId);
+          const data = response?.data || response;
+          setInscriptions(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des cours:', error);
@@ -38,7 +39,9 @@ const EtudiantCours = () => {
     );
   }
 
-  const inscriptionsActives = inscriptions.filter((i) => i.status === 'ACTIVE');
+  const inscriptionsActives = Array.isArray(inscriptions) 
+    ? inscriptions.filter((i) => i.status === 'ACTIVE') 
+    : [];
 
   return (
     <Layout>

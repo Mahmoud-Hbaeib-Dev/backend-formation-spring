@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { noteService } from '../../services/noteService.js';
+import { notesApi } from '../../utils/api.js';
 import Layout from '../../components/Layout.jsx';
 import { FileText, TrendingUp } from 'lucide-react';
 
@@ -14,9 +14,16 @@ const EtudiantNotes = () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
         if (etudiantId) {
-          const data = await noteService.getByEtudiant(etudiantId);
+          const response = await notesApi.getByEtudiant(etudiantId);
+          const data = Array.isArray(response.data) 
+            ? response.data 
+            : Array.isArray(response) 
+              ? response 
+              : [];
           // Trier par date de saisie (plus récentes en premier)
-          data.sort((a, b) => new Date(b.dateSaisie) - new Date(a.dateSaisie));
+          if (Array.isArray(data)) {
+            data.sort((a, b) => new Date(b.dateSaisie) - new Date(a.dateSaisie));
+          }
           setNotes(data);
         }
       } catch (error) {

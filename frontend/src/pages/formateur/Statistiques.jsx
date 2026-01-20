@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { statistiquesService } from '../../services/statistiquesService.js';
-import { coursService } from '../../services/coursService.js';
+import { statistiquesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BarChart3, TrendingUp, Users, BookOpen } from 'lucide-react';
 
@@ -14,12 +14,23 @@ const FormateurStatistiques = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const [dashboard, coursSuivis] = await Promise.all([
-          statistiquesService.getDashboard(),
-          statistiquesService.getCoursPlusSuivis(),
+        const [dashboardResponse, coursSuivisResponse] = await Promise.all([
+          statistiquesApi.getDashboard(),
+          statistiquesApi.getCoursPlusSuivis(),
         ]);
-        setDashboardStats(dashboard);
-        setCoursPlusSuivis(coursSuivis);
+        
+        let dashboardData = parseJsonSafely(dashboardResponse.data);
+        if (!dashboardData) {
+          dashboardData = null;
+        }
+        setDashboardStats(dashboardData);
+        
+        let coursSuivis = parseJsonSafely(coursSuivisResponse.data);
+        if (!coursSuivis) {
+          coursSuivis = [];
+        }
+        const coursSuivisArray = Array.isArray(coursSuivis) ? coursSuivis : [];
+        setCoursPlusSuivis(coursSuivisArray);
       } catch (error) {
         console.error('Erreur lors du chargement des statistiques:', error);
       } finally {

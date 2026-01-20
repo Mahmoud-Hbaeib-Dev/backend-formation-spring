@@ -51,7 +51,7 @@ public class InscriptionRestController {
      * POST /api/inscriptions
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR', 'ETUDIANT')")
     public ResponseEntity<Inscription> inscrireEtudiant(@RequestBody InscriptionRequest request) {
         Inscription inscription = inscriptionService.inscrireEtudiant(
                 request.getEtudiantId(),

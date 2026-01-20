@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { seanceService } from '../../services/seanceService.js';
+import { seancesApi } from '../../utils/api.js';
 import Layout from '../../components/Layout.jsx';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 
@@ -15,13 +15,20 @@ const EtudiantPlanning = () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
         if (etudiantId) {
-          const data = await seanceService.getEmploiDuTempsEtudiant(etudiantId);
+          const response = await seancesApi.getEmploiDuTempsEtudiant(etudiantId);
+          const data = Array.isArray(response.data) 
+            ? response.data 
+            : Array.isArray(response) 
+              ? response 
+              : [];
           // Trier par date et heure
-          data.sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.heure}`);
-            const dateB = new Date(`${b.date}T${b.heure}`);
-            return dateA - dateB;
-          });
+          if (Array.isArray(data)) {
+            data.sort((a, b) => {
+              const dateA = new Date(`${a.date}T${a.heure}`);
+              const dateB = new Date(`${b.date}T${b.heure}`);
+              return dateA - dateB;
+            });
+          }
           setSeances(data);
         }
       } catch (error) {

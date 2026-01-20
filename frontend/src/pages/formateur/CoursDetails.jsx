@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { coursService } from '../../services/coursService.js';
-import { noteService } from '../../services/noteService.js';
-import { inscriptionService } from '../../services/inscriptionService.js';
+import { coursApi, notesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, Users, FileText, ArrowLeft, BarChart3 } from 'lucide-react';
 
@@ -18,15 +17,38 @@ const FormateurCoursDetails = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [coursData, etudiantsData, notesData, statsData] = await Promise.all([
-          coursService.getByCode(code),
-          coursService.getEtudiants(code),
-          coursService.getNotes(code),
-          coursService.getStatistiques(code),
+        const [coursResponse, etudiantsResponse, notesResponse, statsResponse] = await Promise.all([
+          coursApi.getByCode(code),
+          coursApi.getEtudiants(code),
+          coursApi.getNotes(code),
+          coursApi.getStatistiques(code),
         ]);
+        
+        let coursData = parseJsonSafely(coursResponse.data);
+        if (!coursData) {
+          coursData = null;
+        }
         setCours(coursData);
-        setEtudiants(etudiantsData);
-        setNotes(notesData);
+        
+        let etudiantsData = parseJsonSafely(etudiantsResponse.data);
+        if (!etudiantsData) {
+          etudiantsData = [];
+        }
+        const etudiantsArray = Array.isArray(etudiantsData) ? etudiantsData : [];
+        
+        let notesData = parseJsonSafely(notesResponse.data);
+        if (!notesData) {
+          notesData = [];
+        }
+        const notesArray = Array.isArray(notesData) ? notesData : [];
+        
+        let statsData = parseJsonSafely(statsResponse.data);
+        if (!statsData) {
+          statsData = null;
+        }
+        
+        setEtudiants(etudiantsArray);
+        setNotes(notesArray);
         setStatistiques(statsData);
       } catch (error) {
         console.error('Erreur lors du chargement:', error);

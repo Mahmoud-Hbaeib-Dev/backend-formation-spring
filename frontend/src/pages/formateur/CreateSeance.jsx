@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { seanceService } from '../../services/seanceService.js';
-import { coursService } from '../../services/coursService.js';
+import { seancesApi, formateursApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { Calendar, Clock, MapPin, ArrowLeft } from 'lucide-react';
 
@@ -25,10 +25,15 @@ const FormateurCreateSeance = () => {
       try {
         const formateurId = user?.formateurId || user?.userId || user?.id;
         if (formateurId) {
-          const data = await coursService.getByFormateur(formateurId);
-          setCours(data);
-          if (data.length > 0) {
-            setFormData((prev) => ({ ...prev, coursCode: data[0].code }));
+          const response = await formateursApi.getCours(formateurId);
+          let data = parseJsonSafely(response.data);
+          if (!data) {
+            data = [];
+          }
+          const coursArray = Array.isArray(data) ? data : [];
+          setCours(coursArray);
+          if (coursArray.length > 0) {
+            setFormData((prev) => ({ ...prev, coursCode: coursArray[0].code }));
           }
         }
       } catch (error) {
@@ -45,7 +50,7 @@ const FormateurCreateSeance = () => {
     setLoading(true);
 
     try {
-      await seanceService.create(formData);
+      await seancesApi.create(formData);
       navigate('/formateur/seances');
     } catch (err) {
       setError(

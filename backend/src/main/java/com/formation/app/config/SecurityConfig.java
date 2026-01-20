@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Configuration de sécurité Spring Security
@@ -65,9 +66,10 @@ public class SecurityConfig {
      */
     @Bean
     @org.springframework.core.annotation.Order(2)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
             .securityMatcher("/api/**")
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 // IMPORTANT: L'ordre compte ! Les règles les plus spécifiques doivent être en premier
@@ -79,7 +81,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/cours/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT")
                 .requestMatchers("/api/inscriptions/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT")
                 .requestMatchers("/api/seances/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT")
-                .requestMatchers("/api/notes/**").hasAnyRole("ADMIN", "FORMATEUR")
+                .requestMatchers("/api/notes/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT") // Les étudiants peuvent voir leurs notes
                 .requestMatchers("/api/statistiques/**").hasAnyRole("ADMIN", "FORMATEUR")
                 .anyRequest().authenticated()
             )

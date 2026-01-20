@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { coursService } from '../../services/coursService.js';
-import { inscriptionService } from '../../services/inscriptionService.js';
+import { coursApi, inscriptionsApi } from '../../utils/api.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, Plus, CheckCircle } from 'lucide-react';
 
@@ -18,21 +17,34 @@ const EtudiantInscriptionCours = () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
         if (etudiantId) {
-          const [allCours, inscriptions] = await Promise.all([
-            coursService.getAll(),
-            inscriptionService.getByEtudiant(etudiantId),
+          const [allCoursResponse, inscriptionsResponse] = await Promise.all([
+            coursApi.list(),
+            inscriptionsApi.getByEtudiant(etudiantId),
           ]);
+
+          const allCours = Array.isArray(allCoursResponse.data) 
+            ? allCoursResponse.data 
+            : Array.isArray(allCoursResponse) 
+              ? allCoursResponse 
+              : [];
+          const inscriptions = Array.isArray(inscriptionsResponse.data) 
+            ? inscriptionsResponse.data 
+            : Array.isArray(inscriptionsResponse) 
+              ? inscriptionsResponse 
+              : [];
 
           setMesInscriptions(inscriptions);
           
           // Filtrer les cours où l'étudiant n'est pas déjà inscrit
-          const inscriptionsActives = inscriptions
-            .filter((i) => i.status === 'ACTIVE')
-            .map((i) => i.cours?.code);
+          const inscriptionsActives = Array.isArray(inscriptions)
+            ? inscriptions
+                .filter((i) => i.status === 'ACTIVE')
+                .map((i) => i.cours?.code)
+            : [];
           
-          const coursNonInscrits = allCours.filter(
-            (c) => !inscriptionsActives.includes(c.code)
-          );
+          const coursNonInscrits = Array.isArray(allCours)
+            ? allCours.filter((c) => !inscriptionsActives.includes(c.code))
+            : [];
           
           setCoursDisponibles(coursNonInscrits);
         }
@@ -51,24 +63,37 @@ const EtudiantInscriptionCours = () => {
     setInscribing(coursCode);
 
     try {
-      const etudiantId = user?.userId || user?.id;
-      await inscriptionService.inscrire(etudiantId, coursCode);
+      const etudiantId = user?.etudiantId || user?.userId || user?.id;
+      await inscriptionsApi.inscrire(etudiantId, coursCode);
       
       // Recharger les données
-      const [allCours, inscriptions] = await Promise.all([
-        coursService.getAll(),
-        inscriptionService.getByEtudiant(etudiantId),
+      const [allCoursResponse, inscriptionsResponse] = await Promise.all([
+        coursApi.list(),
+        inscriptionsApi.getByEtudiant(etudiantId),
       ]);
+
+      const allCours = Array.isArray(allCoursResponse.data) 
+        ? allCoursResponse.data 
+        : Array.isArray(allCoursResponse) 
+          ? allCoursResponse 
+          : [];
+      const inscriptions = Array.isArray(inscriptionsResponse.data) 
+        ? inscriptionsResponse.data 
+        : Array.isArray(inscriptionsResponse) 
+          ? inscriptionsResponse 
+          : [];
 
       setMesInscriptions(inscriptions);
       
-      const inscriptionsActives = inscriptions
-        .filter((i) => i.status === 'ACTIVE')
-        .map((i) => i.cours?.code);
+      const inscriptionsActives = Array.isArray(inscriptions)
+        ? inscriptions
+            .filter((i) => i.status === 'ACTIVE')
+            .map((i) => i.cours?.code)
+        : [];
       
-      const coursNonInscrits = allCours.filter(
-        (c) => !inscriptionsActives.includes(c.code)
-      );
+      const coursNonInscrits = Array.isArray(allCours)
+        ? allCours.filter((c) => !inscriptionsActives.includes(c.code))
+        : [];
       
       setCoursDisponibles(coursNonInscrits);
     } catch (err) {
