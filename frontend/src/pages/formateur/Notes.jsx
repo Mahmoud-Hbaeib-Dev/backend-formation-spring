@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { formateursApi, notesApi, etudiantsApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
-import { BookOpen, User, Plus } from 'lucide-react';
+import { BookOpen, User, Plus, Edit } from 'lucide-react';
 
 const FormateurNotes = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [cours, setCours] = useState([]);
   const [selectedCours, setSelectedCours] = useState(null);
   const [etudiants, setEtudiants] = useState([]);
@@ -234,6 +236,9 @@ const FormateurNotes = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -258,6 +263,15 @@ const FormateurNotes = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(note.dateSaisie).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => navigate(`/formateur/notes/${note.id}/edit`)}
+                            className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-md transition-colors"
+                            title="Modifier"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
                         </td>
                       </tr>
                     ))}

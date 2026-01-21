@@ -25,15 +25,12 @@
 #### ✅ Implémenté
 - ✅ **Créer une séance** (`CreateSeance.jsx`) - `POST /api/seances`
 - ✅ **Voir les séances** (`Seances.jsx`) - `GET /api/seances/formateur/{id}`
-
-#### ❌ Manque
-- ❌ **Modifier une séance** - `PUT /api/seances/{id}`
-  - **Action**: Ajouter un bouton "Modifier" dans `Seances.jsx`
-  - **Page**: Créer `EditSeance.jsx` ou modal d'édition
+- ✅ **Modifier une séance** (`EditSeance.jsx`) - `PUT /api/seances/{id}`
+  - ✅ Bouton "Modifier" dans `Seances.jsx`
+  - ✅ Page `EditSeance.jsx` créée
   
-- ❌ **Supprimer une séance** - `DELETE /api/seances/{id}`
-  - **Action**: Ajouter un bouton "Supprimer" dans `Seances.jsx`
-  - **Action**: Confirmation avant suppression
+- ✅ **Supprimer une séance** - `DELETE /api/seances/{id}`
+  - ✅ Bouton "Supprimer" avec confirmation dans `Seances.jsx`
 
 - ❌ **Filtre par date** - `GET /api/seances/date?date=...`
   - **Action**: Ajouter un sélecteur de date dans `Seances.jsx`
@@ -48,11 +45,9 @@
 #### ✅ Implémenté
 - ✅ **Attribuer une note** (`Notes.jsx`) - `POST /api/notes`
 - ✅ **Voir les notes d'un cours** (`Notes.jsx`) - `GET /api/notes/cours/{code}`
-
-#### ❌ Manque
-- ❌ **Modifier une note** - `PUT /api/notes/{id}`
-  - **Action**: Ajouter un bouton "Modifier" dans le tableau des notes
-  - **Action**: Modal ou page pour éditer la note
+- ✅ **Modifier une note** (`EditNote.jsx`) - `PUT /api/notes/{id}`
+  - ✅ Bouton "Modifier" dans le tableau des notes (`Notes.jsx`)
+  - ✅ Page `EditNote.jsx` créée
 
 ---
 
@@ -85,12 +80,10 @@
 #### ✅ Implémenté
 - ✅ **S'inscrire à un cours** (`InscriptionCours.jsx`) - `POST /api/inscriptions`
 - ✅ **Voir ses inscriptions** (`InscriptionCours.jsx`) - `GET /api/inscriptions/etudiant/{id}`
-
-#### ❌ Manque
-- ❌ **Se désinscrire d'un cours** - `DELETE /api/inscriptions/{id}`
-  - **Action**: Ajouter un bouton "Se désinscrire" dans la liste des inscriptions
-  - **Problème**: L'endpoint nécessite l'ID de l'inscription, pas le code du cours
-  - **Solution**: Stocker l'ID de l'inscription dans la liste affichée
+- ✅ **Se désinscrire d'un cours** - `DELETE /api/inscriptions/{id}`
+  - ✅ Bouton "Se désinscrire" dans la liste des inscriptions (`InscriptionCours.jsx`)
+  - ✅ Confirmation avant désinscription
+  - ✅ Backend mis à jour pour autoriser les étudiants à se désinscrire
 
 ---
 
@@ -137,22 +130,22 @@
 
 ## 🎯 Priorités d'Implémentation
 
-### 🔴 PRIORITÉ HAUTE
+### 🔴 PRIORITÉ HAUTE - ✅ TERMINÉ
 
-1. **Modifier une séance** (Formateur)
-   - Bouton "Modifier" dans `Seances.jsx`
-   - Page/modal `EditSeance.jsx`
+1. ✅ **Modifier une séance** (Formateur) - **TERMINÉ**
+   - ✅ Bouton "Modifier" dans `Seances.jsx`
+   - ✅ Page `EditSeance.jsx` créée
 
-2. **Supprimer une séance** (Formateur)
-   - Bouton "Supprimer" avec confirmation dans `Seances.jsx`
+2. ✅ **Supprimer une séance** (Formateur) - **TERMINÉ**
+   - ✅ Bouton "Supprimer" avec confirmation dans `Seances.jsx`
 
-3. **Modifier une note** (Formateur)
-   - Bouton "Modifier" dans le tableau des notes (`Notes.jsx`)
-   - Modal ou page d'édition
+3. ✅ **Modifier une note** (Formateur) - **TERMINÉ**
+   - ✅ Bouton "Modifier" dans le tableau des notes (`Notes.jsx`)
+   - ✅ Page `EditNote.jsx` créée
 
-4. **Se désinscrire d'un cours** (Étudiant)
-   - Bouton "Se désinscrire" dans `InscriptionCours.jsx`
-   - **Important**: S'assurer que l'ID de l'inscription est disponible
+4. ✅ **Se désinscrire d'un cours** (Étudiant) - **TERMINÉ**
+   - ✅ Bouton "Se désinscrire" dans `InscriptionCours.jsx`
+   - ✅ Backend autorise maintenant les étudiants à se désinscrire
 
 ### 🟡 PRIORITÉ MOYENNE
 
@@ -183,16 +176,16 @@
 ## 📝 Résumé des Endpoints REST Non Utilisés
 
 ### Séances
-- `PUT /api/seances/{id}` - Modifier une séance
-- `DELETE /api/seances/{id}` - Supprimer une séance
+- ✅ `PUT /api/seances/{id}` - Modifier une séance - **UTILISÉ**
+- ✅ `DELETE /api/seances/{id}` - Supprimer une séance - **UTILISÉ**
 - `GET /api/seances/date?date=...` - Par date
 - `GET /api/seances/date-between?dateDebut=...&dateFin=...` - Par période
 
 ### Notes
-- `PUT /api/notes/{id}` - Modifier une note
+- ✅ `PUT /api/notes/{id}` - Modifier une note - **UTILISÉ**
 
 ### Inscriptions
-- `DELETE /api/inscriptions/{id}` - Désinscription
+- ✅ `DELETE /api/inscriptions/{id}` - Désinscription - **UTILISÉ**
 
 ### Cours
 - `POST /api/cours` - Créer un cours (si nécessaire)
@@ -215,12 +208,12 @@
 
 ## 🚀 Plan d'Action Recommandé
 
-### Phase 1 (Essentiel)
-1. Modifier/Supprimer séances
-2. Modifier notes
-3. Désinscription étudiant
+### Phase 1 (Essentiel) - ✅ TERMINÉ
+1. ✅ Modifier/Supprimer séances
+2. ✅ Modifier notes
+3. ✅ Désinscription étudiant
 
-### Phase 2 (Important)
+### Phase 2 (Important) - 🔄 EN COURS
 4. Filtres par date
 5. Recherche de cours
 6. Page de profil

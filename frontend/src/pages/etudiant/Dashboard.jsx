@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { inscriptionsApi, notesApi, seancesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, FileText, Calendar, TrendingUp } from 'lucide-react';
 
@@ -19,6 +20,8 @@ const EtudiantDashboard = () => {
       try {
         // Utiliser etudiantId si disponible, sinon userId
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
+        console.log('🔍 [ETUDIANT DASHBOARD] EtudiantId utilisé:', etudiantId);
+        console.log('🔍 [ETUDIANT DASHBOARD] User object:', user);
         
         if (etudiantId) {
           const [inscriptionsResponse, notesResponse, seancesResponse] = await Promise.all([
@@ -27,42 +30,59 @@ const EtudiantDashboard = () => {
             seancesApi.getEmploiDuTempsEtudiant(etudiantId),
           ]);
 
-          const inscriptions = Array.isArray(inscriptionsResponse.data) 
-            ? inscriptionsResponse.data 
-            : Array.isArray(inscriptionsResponse) 
-              ? inscriptionsResponse 
-              : [];
-          const notes = Array.isArray(notesResponse.data) 
-            ? notesResponse.data 
-            : Array.isArray(notesResponse) 
-              ? notesResponse 
-              : [];
-          const seances = Array.isArray(seancesResponse.data) 
-            ? seancesResponse.data 
-            : Array.isArray(seancesResponse) 
-              ? seancesResponse 
-              : [];
+          console.log('🔍 [ETUDIANT DASHBOARD] Réponse inscriptions:', inscriptionsResponse);
+          console.log('🔍 [ETUDIANT DASHBOARD] Réponse notes:', notesResponse);
+          console.log('🔍 [ETUDIANT DASHBOARD] Réponse séances:', seancesResponse);
 
-          const inscriptionsActives = Array.isArray(inscriptions) 
-            ? inscriptions.filter((i) => i.status === 'ACTIVE') 
+          // Parser les réponses
+          let inscriptions = parseJsonSafely(inscriptionsResponse.data);
+          if (!inscriptions) {
+            inscriptions = [];
+          }
+          const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
+          console.log(`📊 [ETUDIANT DASHBOARD] Inscriptions parsées: ${inscriptionsArray.length}`);
+
+          let notes = parseJsonSafely(notesResponse.data);
+          if (!notes) {
+            notes = [];
+          }
+          const notesArray = Array.isArray(notes) ? notes : [];
+          console.log(`📊 [ETUDIANT DASHBOARD] Notes parsées: ${notesArray.length}`);
+
+          let seances = parseJsonSafely(seancesResponse.data);
+          if (!seances) {
+            seances = [];
+          }
+          const seancesArray = Array.isArray(seances) ? seances : [];
+          console.log(`📊 [ETUDIANT DASHBOARD] Séances parsées: ${seancesArray.length}`);
+
+          const inscriptionsActives = Array.isArray(inscriptionsArray) 
+            ? inscriptionsArray.filter((i) => i.status === 'ACTIVE') 
             : [];
           const aujourdhui = new Date().toISOString().split('T')[0];
-          const seancesAujourdhui = seances.filter((s) => s.date === aujourdhui).length;
+          const seancesAujourdhui = seancesArray.filter((s) => s.date === aujourdhui).length;
 
           const moyenne =
-            notes.length > 0
-              ? notes.reduce((sum, n) => sum + n.valeur, 0) / notes.length
+            notesArray.length > 0
+              ? notesArray.reduce((sum, n) => sum + n.valeur, 0) / notesArray.length
               : 0;
+
+          console.log(`✅ [ETUDIANT DASHBOARD] Stats calculées:`, {
+            totalCours: inscriptionsActives.length,
+            totalNotes: notesArray.length,
+            moyenne: moyenne.toFixed(2),
+            seancesAujourdhui,
+          });
 
           setStats({
             totalCours: inscriptionsActives.length,
-            totalNotes: notes.length,
+            totalNotes: notesArray.length,
             moyenne: moyenne.toFixed(2),
             seancesAujourdhui,
           });
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des statistiques:', error);
+        console.error('❌ [ETUDIANT DASHBOARD] Erreur lors du chargement des statistiques:', error);
       } finally {
         setLoading(false);
       }

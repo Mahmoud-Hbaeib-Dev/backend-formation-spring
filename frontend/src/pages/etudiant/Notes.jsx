@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { notesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { FileText, TrendingUp } from 'lucide-react';
 
@@ -13,21 +14,31 @@ const EtudiantNotes = () => {
     const loadNotes = async () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
+        console.log('🔍 [ETUDIANT NOTES] EtudiantId utilisé:', etudiantId);
         if (etudiantId) {
           const response = await notesApi.getByEtudiant(etudiantId);
-          const data = Array.isArray(response.data) 
-            ? response.data 
-            : Array.isArray(response) 
-              ? response 
-              : [];
-          // Trier par date de saisie (plus récentes en premier)
-          if (Array.isArray(data)) {
-            data.sort((a, b) => new Date(b.dateSaisie) - new Date(a.dateSaisie));
+          console.log('🔍 [ETUDIANT NOTES] Réponse brute:', response);
+          
+          // Parser la réponse si elle est une chaîne JSON
+          let data = parseJsonSafely(response.data);
+          if (!data) {
+            console.warn('⚠️ [ETUDIANT NOTES] Impossible de parser les notes');
+            data = [];
+          } else {
+            console.log('✅ [ETUDIANT NOTES] Notes parsées:', data);
           }
-          setNotes(data);
+          
+          const notesArray = Array.isArray(data) ? data : [];
+          console.log(`📊 [ETUDIANT NOTES] Nombre de notes reçues: ${notesArray.length}`);
+          
+          // Trier par date de saisie (plus récentes en premier)
+          if (notesArray.length > 0) {
+            notesArray.sort((a, b) => new Date(b.dateSaisie) - new Date(a.dateSaisie));
+          }
+          setNotes(notesArray);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des notes:', error);
+        console.error('❌ [ETUDIANT NOTES] Erreur lors du chargement des notes:', error);
       } finally {
         setLoading(false);
       }

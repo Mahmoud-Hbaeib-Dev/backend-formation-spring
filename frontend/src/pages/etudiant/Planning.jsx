@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { seancesApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 
@@ -14,25 +15,35 @@ const EtudiantPlanning = () => {
     const loadSeances = async () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
+        console.log('🔍 [ETUDIANT PLANNING] EtudiantId utilisé:', etudiantId);
         if (etudiantId) {
           const response = await seancesApi.getEmploiDuTempsEtudiant(etudiantId);
-          const data = Array.isArray(response.data) 
-            ? response.data 
-            : Array.isArray(response) 
-              ? response 
-              : [];
+          console.log('🔍 [ETUDIANT PLANNING] Réponse brute:', response);
+          
+          // Parser la réponse si elle est une chaîne JSON
+          let data = parseJsonSafely(response.data);
+          if (!data) {
+            console.warn('⚠️ [ETUDIANT PLANNING] Impossible de parser les séances');
+            data = [];
+          } else {
+            console.log('✅ [ETUDIANT PLANNING] Séances parsées:', data);
+          }
+          
+          const seancesArray = Array.isArray(data) ? data : [];
+          console.log(`📊 [ETUDIANT PLANNING] Nombre de séances reçues: ${seancesArray.length}`);
+          
           // Trier par date et heure
-          if (Array.isArray(data)) {
-            data.sort((a, b) => {
+          if (seancesArray.length > 0) {
+            seancesArray.sort((a, b) => {
               const dateA = new Date(`${a.date}T${a.heure}`);
               const dateB = new Date(`${b.date}T${b.heure}`);
               return dateA - dateB;
             });
           }
-          setSeances(data);
+          setSeances(seancesArray);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement du planning:', error);
+        console.error('❌ [ETUDIANT PLANNING] Erreur lors du chargement du planning:', error);
       } finally {
         setLoading(false);
       }

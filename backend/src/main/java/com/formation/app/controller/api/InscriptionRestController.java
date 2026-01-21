@@ -65,7 +65,7 @@ public class InscriptionRestController {
      * DELETE /api/inscriptions/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR', 'ETUDIANT')")
     public ResponseEntity<Void> desinscrireEtudiant(@PathVariable String id) {
         inscriptionService.desinscrireEtudiant(id);
         return ResponseEntity.noContent().build();

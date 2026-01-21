@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { inscriptionsApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, CheckCircle, XCircle } from 'lucide-react';
 
@@ -14,13 +15,27 @@ const EtudiantCours = () => {
     const loadInscriptions = async () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
+        console.log('🔍 [ETUDIANT COURS] EtudiantId utilisé:', etudiantId);
+        console.log('🔍 [ETUDIANT COURS] User object:', user);
         if (etudiantId) {
           const response = await inscriptionsApi.getByEtudiant(etudiantId);
-          const data = response?.data || response;
-          setInscriptions(Array.isArray(data) ? data : []);
+          console.log('🔍 [ETUDIANT COURS] Réponse brute:', response);
+          
+          // Parser la réponse si elle est une chaîne JSON
+          let data = parseJsonSafely(response.data);
+          if (!data) {
+            console.warn('⚠️ [ETUDIANT COURS] Impossible de parser les inscriptions');
+            data = [];
+          } else {
+            console.log('✅ [ETUDIANT COURS] Inscriptions parsées:', data);
+          }
+          
+          const inscriptionsArray = Array.isArray(data) ? data : [];
+          console.log(`📊 [ETUDIANT COURS] Nombre d'inscriptions reçues: ${inscriptionsArray.length}`);
+          setInscriptions(inscriptionsArray);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des cours:', error);
+        console.error('❌ [ETUDIANT COURS] Erreur lors du chargement des cours:', error);
       } finally {
         setLoading(false);
       }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { coursApi, inscriptionsApi } from '../../utils/api.js';
+import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
-import { BookOpen, Plus, CheckCircle } from 'lucide-react';
+import { BookOpen, Plus, CheckCircle, X, Trash2 } from 'lucide-react';
 
 const EtudiantInscriptionCours = () => {
   const { user } = useAuth();
@@ -10,46 +11,56 @@ const EtudiantInscriptionCours = () => {
   const [mesInscriptions, setMesInscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inscribing, setInscribing] = useState(null);
+  const [desinscribing, setDesinscribing] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
+        console.log('🔍 [ETUDIANT INSCRIPTION] EtudiantId utilisé:', etudiantId);
         if (etudiantId) {
           const [allCoursResponse, inscriptionsResponse] = await Promise.all([
             coursApi.list(),
             inscriptionsApi.getByEtudiant(etudiantId),
           ]);
 
-          const allCours = Array.isArray(allCoursResponse.data) 
-            ? allCoursResponse.data 
-            : Array.isArray(allCoursResponse) 
-              ? allCoursResponse 
-              : [];
-          const inscriptions = Array.isArray(inscriptionsResponse.data) 
-            ? inscriptionsResponse.data 
-            : Array.isArray(inscriptionsResponse) 
-              ? inscriptionsResponse 
-              : [];
+          console.log('🔍 [ETUDIANT INSCRIPTION] Réponse cours:', allCoursResponse);
+          console.log('🔍 [ETUDIANT INSCRIPTION] Réponse inscriptions:', inscriptionsResponse);
 
-          setMesInscriptions(inscriptions);
+          // Parser les réponses
+          let allCours = parseJsonSafely(allCoursResponse.data);
+          if (!allCours) {
+            allCours = [];
+          }
+          const allCoursArray = Array.isArray(allCours) ? allCours : [];
+          console.log(`📊 [ETUDIANT INSCRIPTION] Nombre de cours disponibles: ${allCoursArray.length}`);
+
+          let inscriptions = parseJsonSafely(inscriptionsResponse.data);
+          if (!inscriptions) {
+            inscriptions = [];
+          }
+          const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
+          console.log(`📊 [ETUDIANT INSCRIPTION] Nombre d'inscriptions: ${inscriptionsArray.length}`);
+
+          setMesInscriptions(inscriptionsArray);
           
           // Filtrer les cours où l'étudiant n'est pas déjà inscrit
-          const inscriptionsActives = Array.isArray(inscriptions)
-            ? inscriptions
+          const inscriptionsActives = Array.isArray(inscriptionsArray)
+            ? inscriptionsArray
                 .filter((i) => i.status === 'ACTIVE')
                 .map((i) => i.cours?.code)
             : [];
           
-          const coursNonInscrits = Array.isArray(allCours)
-            ? allCours.filter((c) => !inscriptionsActives.includes(c.code))
+          const coursNonInscrits = Array.isArray(allCoursArray)
+            ? allCoursArray.filter((c) => !inscriptionsActives.includes(c.code))
             : [];
           
+          console.log(`📊 [ETUDIANT INSCRIPTION] Cours non inscrits: ${coursNonInscrits.length}`);
           setCoursDisponibles(coursNonInscrits);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement:', error);
+        console.error('❌ [ETUDIANT INSCRIPTION] Erreur lors du chargement:', error);
       } finally {
         setLoading(false);
       }
@@ -58,6 +69,43 @@ const EtudiantInscriptionCours = () => {
     loadData();
   }, [user]);
 
+  const reloadData = async () => {
+    const etudiantId = user?.etudiantId || user?.userId || user?.id;
+    if (!etudiantId) return;
+
+    const [allCoursResponse, inscriptionsResponse] = await Promise.all([
+      coursApi.list(),
+      inscriptionsApi.getByEtudiant(etudiantId),
+    ]);
+
+    // Parser les réponses
+    let allCours = parseJsonSafely(allCoursResponse.data);
+    if (!allCours) {
+      allCours = [];
+    }
+    const allCoursArray = Array.isArray(allCours) ? allCours : [];
+
+    let inscriptions = parseJsonSafely(inscriptionsResponse.data);
+    if (!inscriptions) {
+      inscriptions = [];
+    }
+    const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
+
+    setMesInscriptions(inscriptionsArray);
+    
+    const inscriptionsActives = Array.isArray(inscriptionsArray)
+      ? inscriptionsArray
+          .filter((i) => i.status === 'ACTIVE')
+          .map((i) => i.cours?.code)
+      : [];
+    
+    const coursNonInscrits = Array.isArray(allCoursArray)
+      ? allCoursArray.filter((c) => !inscriptionsActives.includes(c.code))
+      : [];
+    
+    setCoursDisponibles(coursNonInscrits);
+  };
+
   const handleInscription = async (coursCode) => {
     setError('');
     setInscribing(coursCode);
@@ -65,37 +113,7 @@ const EtudiantInscriptionCours = () => {
     try {
       const etudiantId = user?.etudiantId || user?.userId || user?.id;
       await inscriptionsApi.inscrire(etudiantId, coursCode);
-      
-      // Recharger les données
-      const [allCoursResponse, inscriptionsResponse] = await Promise.all([
-        coursApi.list(),
-        inscriptionsApi.getByEtudiant(etudiantId),
-      ]);
-
-      const allCours = Array.isArray(allCoursResponse.data) 
-        ? allCoursResponse.data 
-        : Array.isArray(allCoursResponse) 
-          ? allCoursResponse 
-          : [];
-      const inscriptions = Array.isArray(inscriptionsResponse.data) 
-        ? inscriptionsResponse.data 
-        : Array.isArray(inscriptionsResponse) 
-          ? inscriptionsResponse 
-          : [];
-
-      setMesInscriptions(inscriptions);
-      
-      const inscriptionsActives = Array.isArray(inscriptions)
-        ? inscriptions
-            .filter((i) => i.status === 'ACTIVE')
-            .map((i) => i.cours?.code)
-        : [];
-      
-      const coursNonInscrits = Array.isArray(allCours)
-        ? allCours.filter((c) => !inscriptionsActives.includes(c.code))
-        : [];
-      
-      setCoursDisponibles(coursNonInscrits);
+      await reloadData();
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -104,6 +122,28 @@ const EtudiantInscriptionCours = () => {
       );
     } finally {
       setInscribing(null);
+    }
+  };
+
+  const handleDesinscription = async (inscriptionId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir vous désinscrire de ce cours ?')) {
+      return;
+    }
+
+    setError('');
+    setDesinscribing(inscriptionId);
+
+    try {
+      await inscriptionsApi.desinscrire(inscriptionId);
+      await reloadData();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Erreur lors de la désinscription'
+      );
+    } finally {
+      setDesinscribing(null);
     }
   };
 
@@ -117,6 +157,11 @@ const EtudiantInscriptionCours = () => {
     );
   }
 
+  // Calculer les inscriptions actives avant le rendu
+  const inscriptionsActives = Array.isArray(mesInscriptions)
+    ? mesInscriptions.filter((i) => i.status === 'ACTIVE')
+    : [];
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -128,6 +173,57 @@ const EtudiantInscriptionCours = () => {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
             {error}
+          </div>
+        )}
+
+        {/* Mes inscriptions actives */}
+        {inscriptionsActives.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Mes inscriptions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {inscriptionsActives.map((inscription) => (
+                    <div key={inscription.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {inscription.cours?.titre}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Code: {inscription.cours?.code}
+                          </p>
+                        </div>
+                        <CheckCircle className="h-5 w-5 text-green-500 ml-2" />
+                      </div>
+                      {inscription.cours?.description && (
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                          {inscription.cours.description}
+                        </p>
+                      )}
+                      {inscription.cours?.formateur && (
+                        <p className="text-sm text-gray-500 mb-4">
+                          Formateur: {inscription.cours.formateur.nom}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => handleDesinscription(inscription.id)}
+                        disabled={desinscribing === inscription.id}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {desinscribing === inscription.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Désinscription...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 size={18} />
+                            <span>Se désinscrire</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+              ))}
+            </div>
           </div>
         )}
 
