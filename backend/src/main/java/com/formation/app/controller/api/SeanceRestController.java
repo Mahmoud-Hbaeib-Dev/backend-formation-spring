@@ -100,6 +100,11 @@ public class SeanceRestController {
     @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR')")
     public ResponseEntity<List<Seance>> getSeancesByFormateur(@PathVariable String formateurId) {
         List<Seance> seances = seanceService.getSeancesByFormateur(formateurId);
+        System.out.println("🔍 [SEANCE API] FormateurId recherché: " + formateurId);
+        System.out.println("🔍 [SEANCE API] Nombre de séances trouvées: " + seances.size());
+        if (!seances.isEmpty()) {
+            System.out.println("🔍 [SEANCE API] Première séance - ID: " + seances.get(0).getId() + ", Formateur ID: " + (seances.get(0).getFormateur() != null ? seances.get(0).getFormateur().getId() : "null"));
+        }
         return ResponseEntity.ok(seances);
     }
     

@@ -1,22 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { seancesApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, Trash2 } from 'lucide-react';
 
 const FormateurSeances = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [seances, setSeances] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const loadSeances = async () => {
       try {
         const formateurId = user?.formateurId || user?.userId || user?.id;
+        console.log('🔍 [FORMATEUR SEANCES] FormateurId utilisé:', formateurId);
+        console.log('🔍 [FORMATEUR SEANCES] User object:', user);
         if (formateurId) {
           const response = await seancesApi.getByFormateur(formateurId);
+          console.log('🔍 [FORMATEUR SEANCES] Réponse brute:', response);
           
           // Parser la réponse si elle est une chaîne JSON
           let data = parseJsonSafely(response.data);
@@ -28,6 +33,7 @@ const FormateurSeances = () => {
           }
           
           const seancesArray = Array.isArray(data) ? data : [];
+          console.log(`📊 [FORMATEUR SEANCES] Nombre de séances reçues: ${seancesArray.length}`);
           // Trier par date et heure
           if (seancesArray.length > 0) {
             seancesArray.sort((a, b) => {
@@ -37,6 +43,7 @@ const FormateurSeances = () => {
             });
           }
           setSeances(seancesArray);
+          console.log(`✅ [FORMATEUR SEANCES] ${seancesArray.length} séance(s) chargée(s) dans le state`);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des séances:', error);
@@ -56,6 +63,39 @@ const FormateurSeances = () => {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handleDelete = async (seanceId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette séance ?')) {
+      return;
+    }
+
+    setDeletingId(seanceId);
+    try {
+      await seancesApi.remove(seanceId);
+      // Recharger les séances
+      const formateurId = user?.formateurId || user?.userId || user?.id;
+      if (formateurId) {
+        const response = await seancesApi.getByFormateur(formateurId);
+        let data = parseJsonSafely(response.data);
+        if (!data) {
+          data = [];
+        }
+        const seancesArray = Array.isArray(data) ? data : [];
+        if (seancesArray.length > 0) {
+          seancesArray.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.heure}`);
+            const dateB = new Date(`${b.date}T${b.heure}`);
+            return dateA - dateB;
+          });
+        }
+        setSeances(seancesArray);
+      }
+    } catch (error) {
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (loading) {
@@ -118,6 +158,27 @@ const FormateurSeances = () => {
                           </div>
                         )}
                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => navigate(`/formateur/seances/${seance.id}/edit`)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Modifier"
+                      >
+                        <Edit className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(seance.id)}
+                        disabled={deletingId === seance.id}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Supprimer"
+                      >
+                        {deletingId === seance.id ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
+                        ) : (
+                          <Trash2 className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>

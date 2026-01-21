@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { seancesApi, formateursApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { Calendar, Clock, MapPin, ArrowLeft } from 'lucide-react';
 
-const FormateurCreateSeance = () => {
+const FormateurEditSeance = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
   const [cours, setCours] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     date: '',
     heure: '',
@@ -21,33 +23,60 @@ const FormateurCreateSeance = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadCours = async () => {
+    const loadData = async () => {
       try {
         const formateurId = user?.formateurId || user?.userId || user?.id;
-        if (formateurId) {
-          const response = await formateursApi.getCours(formateurId);
-          let data = parseJsonSafely(response.data);
-          if (!data) {
-            data = [];
-          }
-          const coursArray = Array.isArray(data) ? data : [];
-          setCours(coursArray);
-          if (coursArray.length > 0) {
-            setFormData((prev) => ({ ...prev, coursCode: coursArray[0].code }));
-          }
+        
+        // Charger les cours et la séance en parallèle
+        const [coursResponse, seanceResponse] = await Promise.all([
+          formateursApi.getCours(formateurId),
+          seancesApi.getById(id),
+        ]);
+
+        // Parser les cours
+        let coursData = parseJsonSafely(coursResponse.data);
+        if (!coursData) {
+          coursData = [];
+        }
+        const coursArray = Array.isArray(coursData) ? coursData : [];
+        setCours(coursArray);
+
+        // Parser la séance
+        let seanceData = parseJsonSafely(seanceResponse.data);
+        if (seanceData) {
+          // Formater la date pour l'input date (YYYY-MM-DD)
+          const dateStr = seanceData.date;
+          const formattedDate = dateStr ? dateStr.split('T')[0] : '';
+          
+          // Formater l'heure pour l'input time (HH:MM)
+          const heureStr = seanceData.heure;
+          const formattedHeure = heureStr ? heureStr.substring(0, 5) : '';
+
+          setFormData({
+            date: formattedDate,
+            heure: formattedHeure,
+            salle: seanceData.salle || '',
+            coursCode: seanceData.cours?.code || (coursArray.length > 0 ? coursArray[0].code : ''),
+            formateurId: seanceData.formateur?.id || formateurId || '',
+          });
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des cours:', error);
+        console.error('Erreur lors du chargement:', error);
+        setError('Erreur lors du chargement de la séance');
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadCours();
-  }, [user]);
+    if (id && user) {
+      loadData();
+    }
+  }, [id, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSaving(true);
 
     try {
       // Formater les données pour le backend (le backend attend des objets Cours et Formateur)
@@ -62,18 +91,28 @@ const FormateurCreateSeance = () => {
           id: formData.formateurId
         }
       };
-      await seancesApi.create(dataToSend);
+      await seancesApi.update(id, dataToSend);
       navigate('/formateur/seances');
     } catch (err) {
       setError(
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Erreur lors de la création de la séance'
+        'Erreur lors de la modification de la séance'
       );
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -86,7 +125,7 @@ const FormateurCreateSeance = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Créer une séance</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Modifier la séance</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
@@ -163,10 +202,10 @@ const FormateurCreateSeance = () => {
             <div className="flex space-x-3">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={saving}
                 className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Création...' : 'Créer la séance'}
+                {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </button>
               <button
                 type="button"
@@ -183,5 +222,5 @@ const FormateurCreateSeance = () => {
   );
 };
 
-export default FormateurCreateSeance;
+export default FormateurEditSeance;
 

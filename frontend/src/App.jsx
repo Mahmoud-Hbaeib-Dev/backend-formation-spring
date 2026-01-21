@@ -9,6 +9,7 @@ import FormateurCours from './pages/formateur/Cours.jsx';
 import FormateurCoursDetails from './pages/formateur/CoursDetails.jsx';
 import FormateurSeances from './pages/formateur/Seances.jsx';
 import FormateurCreateSeance from './pages/formateur/CreateSeance.jsx';
+import FormateurEditSeance from './pages/formateur/EditSeance.jsx';
 import FormateurNotes from './pages/formateur/Notes.jsx';
 import FormateurStatistiques from './pages/formateur/Statistiques.jsx';
 
@@ -66,6 +67,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="FORMATEUR">
             <FormateurCreateSeance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/formateur/seances/:id/edit"
+        element={
+          <ProtectedRoute requiredRole="FORMATEUR">
+            <FormateurEditSeance />
           </ProtectedRoute>
         }
       />

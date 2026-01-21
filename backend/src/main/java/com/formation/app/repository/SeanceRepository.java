@@ -85,6 +85,21 @@ public interface SeanceRepository extends JpaRepository<Seance, String> {
                                    @Param("heure") LocalTime heure);
     
     /**
+     * Trouve les séances d'un formateur à une date et heure spécifiques
+     * @param formateurId l'ID du formateur
+     * @param date la date
+     * @param heure l'heure
+     * @return liste des séances
+     */
+    @Query("SELECT s FROM Seance s " +
+           "WHERE s.formateur.id = :formateurId " +
+           "AND s.date = :date " +
+           "AND s.heure = :heure")
+    List<Seance> findByFormateurIdAndDateAndHeure(@Param("formateurId") String formateurId,
+                                                   @Param("date") LocalDate date,
+                                                   @Param("heure") LocalTime heure);
+    
+    /**
      * Trouve toutes les séances par date
      * @param date la date
      * @return liste des séances

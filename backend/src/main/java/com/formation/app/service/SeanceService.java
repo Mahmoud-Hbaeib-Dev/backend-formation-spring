@@ -62,12 +62,27 @@ public class SeanceService {
     public Seance updateSeance(String id, Seance seanceDetails) {
         Seance seance = getSeanceById(id);
         
-        // Vérifier les conflits si la date/heure change
+        // Déterminer le formateurId à utiliser pour la vérification des conflits
+        String formateurIdPourVerification = seance.getFormateur().getId();
+        
+        // Si un nouveau formateur est fourni, l'utiliser
+        if (seanceDetails.getFormateur() != null && seanceDetails.getFormateur().getId() != null) {
+            formateurIdPourVerification = seanceDetails.getFormateur().getId();
+        }
+        
+        // Vérifier les conflits si la date/heure change (en excluant la séance actuelle)
         if (!seance.getDate().equals(seanceDetails.getDate()) || 
             !seance.getHeure().equals(seanceDetails.getHeure())) {
-            if (verifierConflitFormateur(seanceDetails.getFormateur().getId(), 
-                                        seanceDetails.getDate(), 
-                                        seanceDetails.getHeure())) {
+            // Vérifier s'il y a un conflit avec une autre séance (pas celle qu'on modifie)
+            List<Seance> seancesConflit = seanceRepository.findByFormateurIdAndDateAndHeure(
+                formateurIdPourVerification, 
+                seanceDetails.getDate(), 
+                seanceDetails.getHeure()
+            );
+            // Filtrer pour exclure la séance actuelle
+            boolean conflit = seancesConflit.stream()
+                .anyMatch(s -> !s.getId().equals(id));
+            if (conflit) {
                 throw new ConflictException("Le formateur a déjà une séance à cette date et heure");
             }
         }
@@ -114,7 +129,41 @@ public class SeanceService {
      */
     @Transactional(readOnly = true)
     public List<Seance> getSeancesByFormateur(String formateurId) {
-        return seanceRepository.findByFormateurId(formateurId);
+        try {
+            System.out.println("🔍 [SEANCE SERVICE] Recherche séances pour formateurId: " + formateurId);
+            List<Seance> seances = seanceRepository.findByFormateurId(formateurId);
+            System.out.println("🔍 [SEANCE SERVICE] Nombre de séances trouvées: " + seances.size());
+            
+            // Forcer le chargement des relations LAZY dans la transaction
+            for (Seance s : seances) {
+                try {
+                    // Charger le cours (force l'initialisation de la relation LAZY)
+                    if (s.getCours() != null) {
+                        String code = s.getCours().getCode();
+                        String titre = s.getCours().getTitre();
+                        System.out.println("  ✅ Séance " + s.getId() + ": Cours " + code + " - " + titre);
+                    } else {
+                        System.out.println("  ⚠️ Séance " + s.getId() + ": Cours est null");
+                    }
+                    // Charger le formateur (force l'initialisation de la relation LAZY)
+                    if (s.getFormateur() != null) {
+                        String formId = s.getFormateur().getId();
+                        String formNom = s.getFormateur().getNom();
+                        System.out.println("  ✅ Séance " + s.getId() + ": Formateur " + formId + " - " + formNom);
+                    } else {
+                        System.out.println("  ⚠️ Séance " + s.getId() + ": Formateur est null");
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ [SEANCE SERVICE] Erreur lors du chargement des relations pour séance " + s.getId() + ": " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+            return seances;
+        } catch (Exception e) {
+            System.err.println("❌ [SEANCE SERVICE] Erreur lors de la récupération des séances: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     /**

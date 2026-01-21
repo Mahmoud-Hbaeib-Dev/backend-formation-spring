@@ -295,8 +295,12 @@ public class DataInitializer implements CommandLineRunner {
         Seance seance1 = new Seance("SEA001", LocalDate.now().plusDays(1), LocalTime.of(9, 0), "Salle A", cours1, formateur1);
         Seance seance2 = new Seance("SEA002", LocalDate.now().plusDays(2), LocalTime.of(14, 0), "Salle B", cours2, formateur2);
         Seance seance3 = new Seance("SEA003", LocalDate.now().plusDays(3), LocalTime.of(10, 30), "Salle C", cours3, formateur3);
-        seanceRepository.saveAll(List.of(seance1, seance2, seance3));
-        log.info("✅ Séances créées");
+        // Ajouter plus de séances pour formateur1 (dupont)
+        Seance seance4 = new Seance("SEA004", LocalDate.now().plusDays(4), LocalTime.of(11, 0), "Salle D", cours1, formateur1);
+        Seance seance5 = new Seance("SEA005", LocalDate.now().plusDays(5), LocalTime.of(15, 30), "Salle E", cours1, formateur1);
+        Seance seance6 = new Seance("SEA006", LocalDate.now().plusDays(6), LocalTime.of(8, 30), "Salle F", cours1, formateur1);
+        seanceRepository.saveAll(List.of(seance1, seance2, seance3, seance4, seance5, seance6));
+        log.info("✅ Séances créées (6 séances au total, dont 4 pour formateur1)");
         
         // Créer des notes
         Note note1 = new Note("NOTE001", 15.5f, LocalDate.now(), etudiant1, cours1);
