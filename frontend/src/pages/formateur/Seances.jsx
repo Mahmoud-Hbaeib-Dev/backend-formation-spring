@@ -1,59 +1,116 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { seancesApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
-import { Calendar, Clock, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, Trash2, Filter, X } from 'lucide-react';
 
 const FormateurSeances = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [seances, setSeances] = useState([]);
+  const [allSeances, setAllSeances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'date', 'period'
+  const [filterDate, setFilterDate] = useState('');
+  const [filterDateDebut, setFilterDateDebut] = useState('');
+  const [filterDateFin, setFilterDateFin] = useState('');
+  
+  const formateurId = useMemo(() => user?.formateurId || user?.userId || user?.id, [user]);
 
   useEffect(() => {
+    if (!formateurId) {
+      setLoading(false);
+      return;
+    }
+
     const loadSeances = async () => {
       try {
-        const formateurId = user?.formateurId || user?.userId || user?.id;
-        console.log('🔍 [FORMATEUR SEANCES] FormateurId utilisé:', formateurId);
-        console.log('🔍 [FORMATEUR SEANCES] User object:', user);
-        if (formateurId) {
-          const response = await seancesApi.getByFormateur(formateurId);
-          console.log('🔍 [FORMATEUR SEANCES] Réponse brute:', response);
-          
-          // Parser la réponse si elle est une chaîne JSON
-          let data = parseJsonSafely(response.data);
-          if (!data) {
-            console.warn('⚠️ [FORMATEUR SEANCES] Impossible de parser les séances');
-            data = [];
-          } else {
-            console.log('✅ [FORMATEUR SEANCES] Séances parsées:', data);
-          }
-          
-          const seancesArray = Array.isArray(data) ? data : [];
-          console.log(`📊 [FORMATEUR SEANCES] Nombre de séances reçues: ${seancesArray.length}`);
-          // Trier par date et heure
-          if (seancesArray.length > 0) {
-            seancesArray.sort((a, b) => {
-              const dateA = new Date(`${a.date}T${a.heure}`);
-              const dateB = new Date(`${b.date}T${b.heure}`);
-              return dateA - dateB;
-            });
-          }
-          setSeances(seancesArray);
-          console.log(`✅ [FORMATEUR SEANCES] ${seancesArray.length} séance(s) chargée(s) dans le state`);
+        const response = await seancesApi.getByFormateur(formateurId);
+        let data = parseJsonSafely(response.data);
+        if (!data) {
+          data = [];
         }
+        const seancesArray = Array.isArray(data) ? data : [];
+        
+        // Trier par date et heure
+        if (seancesArray.length > 0) {
+          seancesArray.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.heure}`);
+            const dateB = new Date(`${b.date}T${b.heure}`);
+            return dateA - dateB;
+          });
+        }
+        setSeances(seancesArray);
+        setAllSeances(seancesArray);
       } catch (error) {
         console.error('Erreur lors du chargement des séances:', error);
+        setSeances([]);
+        setAllSeances([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadSeances();
-  }, [user]);
+  }, [formateurId]);
+
+  // Appliquer les filtres
+  useEffect(() => {
+    if (!formateurId) return;
+
+    const applyFilters = async () => {
+
+      try {
+        let filteredSeances = [];
+        
+        if (filterType === 'all') {
+          // Charger toutes les séances
+          const response = await seancesApi.getByFormateur(formateurId);
+          let data = parseJsonSafely(response.data);
+          filteredSeances = Array.isArray(data) ? data : [];
+        } else if (filterType === 'date' && filterDate) {
+          // Filtrer par date
+          const response = await seancesApi.getByDate(filterDate);
+          let data = parseJsonSafely(response.data);
+          filteredSeances = Array.isArray(data) ? data : [];
+          // Filtrer pour ne garder que celles du formateur
+          filteredSeances = filteredSeances.filter(
+            s => s.formateur?.id === formateurId || s.formateurInfo?.id === formateurId
+          );
+        } else if (filterType === 'period' && filterDateDebut && filterDateFin) {
+          // Filtrer par période
+          const response = await seancesApi.getBetweenDates(filterDateDebut, filterDateFin);
+          let data = parseJsonSafely(response.data);
+          filteredSeances = Array.isArray(data) ? data : [];
+          // Filtrer pour ne garder que celles du formateur
+          filteredSeances = filteredSeances.filter(
+            s => s.formateur?.id === formateurId || s.formateurInfo?.id === formateurId
+          );
+        } else {
+          // Pas de filtre actif, utiliser toutes les séances
+          filteredSeances = allSeances;
+        }
+
+        // Trier par date et heure
+        if (filteredSeances.length > 0) {
+          filteredSeances.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.heure}`);
+            const dateB = new Date(`${b.date}T${b.heure}`);
+            return dateA - dateB;
+          });
+        }
+        
+        setSeances(filteredSeances);
+      } catch (error) {
+        console.error('Erreur lors de l\'application des filtres:', error);
+      }
+    };
+
+    applyFilters();
+  }, [filterType, filterDate, filterDateDebut, filterDateFin, user, allSeances]);
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -74,7 +131,6 @@ const FormateurSeances = () => {
     try {
       await seancesApi.remove(seanceId);
       // Recharger les séances
-      const formateurId = user?.formateurId || user?.userId || user?.id;
       if (formateurId) {
         const response = await seancesApi.getByFormateur(formateurId);
         let data = parseJsonSafely(response.data);
@@ -90,12 +146,20 @@ const FormateurSeances = () => {
           });
         }
         setSeances(seancesArray);
+        setAllSeances(seancesArray);
       }
     } catch (error) {
       alert('Erreur lors de la suppression: ' + (error.response?.data?.message || error.message));
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleClearFilters = () => {
+    setFilterType('all');
+    setFilterDate('');
+    setFilterDateDebut('');
+    setFilterDateFin('');
   };
 
   if (loading) {
@@ -122,6 +186,87 @@ const FormateurSeances = () => {
           >
             Créer une séance
           </Link>
+        </div>
+
+        {/* Filtres */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center space-x-4 mb-4">
+            <Filter className="h-5 w-5 text-gray-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Filtres</h2>
+            {(filterType !== 'all' || filterDate || filterDateDebut || filterDateFin) && (
+              <button
+                onClick={handleClearFilters}
+                className="ml-auto flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900"
+              >
+                <X className="h-4 w-4" />
+                <span>Effacer</span>
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type de filtre
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => {
+                  setFilterType(e.target.value);
+                  setFilterDate('');
+                  setFilterDateDebut('');
+                  setFilterDateFin('');
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="all">Toutes les séances</option>
+                <option value="date">Par date</option>
+                <option value="period">Par période</option>
+              </select>
+            </div>
+
+            {filterType === 'date' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            )}
+
+            {filterType === 'period' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date début
+                  </label>
+                  <input
+                    type="date"
+                    value={filterDateDebut}
+                    onChange={(e) => setFilterDateDebut(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date fin
+                  </label>
+                  <input
+                    type="date"
+                    value={filterDateFin}
+                    onChange={(e) => setFilterDateFin(e.target.value)}
+                    min={filterDateDebut}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {seances.length === 0 ? (

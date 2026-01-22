@@ -28,6 +28,7 @@ const Layout = ({ children }) => {
         { path: '/formateur/seances', label: 'Mes Séances', icon: '📅' },
         { path: '/formateur/notes', label: 'Gestion Notes', icon: '📝' },
         { path: '/formateur/statistiques', label: 'Statistiques', icon: '📈' },
+        { path: '/formateur/profile', label: 'Profil', icon: '👤' },
       ];
     } else if (hasRole('ETUDIANT')) {
       return [
@@ -36,6 +37,7 @@ const Layout = ({ children }) => {
         { path: '/etudiant/inscription', label: 'S\'inscrire', icon: '➕' },
         { path: '/etudiant/notes', label: 'Mes Notes', icon: '📝' },
         { path: '/etudiant/planning', label: 'Planning', icon: '📅' },
+        { path: '/etudiant/profile', label: 'Profil', icon: '👤' },
       ];
     }
     return [];

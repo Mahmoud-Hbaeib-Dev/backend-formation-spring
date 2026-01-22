@@ -101,6 +101,12 @@ const FormateurCoursDetails = () => {
             <h1 className="text-3xl font-bold text-gray-900">{cours.titre}</h1>
             <p className="mt-2 text-gray-600">Code: {cours.code}</p>
           </div>
+          <Link
+            to={`/formateur/cours/${code}/edit`}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Modifier
+          </Link>
         </div>
 
         {/* Statistiques */}

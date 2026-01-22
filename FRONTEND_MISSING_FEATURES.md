@@ -32,11 +32,11 @@
 - ✅ **Supprimer une séance** - `DELETE /api/seances/{id}`
   - ✅ Bouton "Supprimer" avec confirmation dans `Seances.jsx`
 
-- ❌ **Filtre par date** - `GET /api/seances/date?date=...`
-  - **Action**: Ajouter un sélecteur de date dans `Seances.jsx`
+- ✅ **Filtre par date** - `GET /api/seances/date?date=...`
+  - ✅ Sélecteur de date ajouté dans `Seances.jsx`
 
-- ❌ **Filtre par période** - `GET /api/seances/date-between?dateDebut=...&dateFin=...`
-  - **Action**: Ajouter un filtre de période dans `Seances.jsx`
+- ✅ **Filtre par période** - `GET /api/seances/date-between?dateDebut=...&dateFin=...`
+  - ✅ Filtre de période ajouté dans `Seances.jsx`
 
 ---
 
@@ -58,20 +58,20 @@
 - ✅ **Détails d'un cours** (`CoursDetails.jsx`) - `GET /api/cours/{code}`
 - ✅ **Statistiques d'un cours** (`CoursDetails.jsx`) - `GET /api/cours/{code}/statistiques`
 
-#### ❌ Manque
-- ❌ **Créer un cours** - `POST /api/cours`
-  - **Note**: Peut être réservé à l'admin, mais l'API le permet pour FORMATEUR
-  - **Action**: Créer `CreateCours.jsx` si nécessaire
+#### ✅ Implémenté
+- ✅ **Créer un cours** - `POST /api/cours`
+  - ✅ Page `CreateCours.jsx` créée (`/formateur/cours/new`)
+  - ✅ Bouton "Créer un cours" ajouté dans `Cours.jsx`
 
-- ❌ **Modifier un cours** - `PUT /api/cours/{code}`
-  - **Note**: Peut être réservé à l'admin, mais l'API le permet pour FORMATEUR
-  - **Action**: Ajouter un bouton "Modifier" dans `CoursDetails.jsx`
+- ✅ **Modifier un cours** - `PUT /api/cours/{code}`
+  - ✅ Bouton "Modifier" ajouté dans `CoursDetails.jsx`
+  - ✅ Page `EditCours.jsx` créée (`/formateur/cours/:code/edit`)
 
 - ❌ **Supprimer un cours** - `DELETE /api/cours/{code}`
   - **Note**: Réservé à ADMIN uniquement (normal)
 
-- ❌ **Recherche de cours** - `GET /api/cours/search/titre?titre=...`
-  - **Action**: Ajouter une barre de recherche dans `Cours.jsx`
+- ✅ **Recherche de cours** - `GET /api/cours/search/titre?titre=...`
+  - ✅ Barre de recherche ajoutée dans `Cours.jsx`
 
 ---
 
@@ -89,14 +89,12 @@
 
 ### 5. 🔍 RECHERCHE ET FILTRES (Général)
 
-#### ❌ Manque
-- ❌ **Recherche d'étudiants par nom** - `GET /api/etudiants/search/nom?nom=...`
-  - **Utilisation**: Dans la page de gestion des notes (Formateur)
-  - **Action**: Ajouter une barre de recherche dans `Notes.jsx`
+#### ✅ Implémenté
+- ✅ **Recherche d'étudiants par nom** - `GET /api/etudiants/search/nom?nom=...`
+  - ✅ Barre de recherche ajoutée dans `Notes.jsx` (Formateur)
 
-- ❌ **Recherche de cours par titre** - `GET /api/cours/search/titre?titre=...`
-  - **Utilisation**: Dans `Cours.jsx` (Formateur) et `InscriptionCours.jsx` (Étudiant)
-  - **Action**: Ajouter une barre de recherche
+- ✅ **Recherche de cours par titre** - `GET /api/cours/search/titre?titre=...`
+  - ✅ Barre de recherche ajoutée dans `Cours.jsx` (Formateur) et `InscriptionCours.jsx` (Étudiant)
 
 - ❌ **Filtre par spécialité** (Formateurs) - `GET /api/formateurs/specialite/{specialite}`
   - **Utilisation**: Peut être utile pour filtrer les formateurs
@@ -105,11 +103,11 @@
 
 ### 6. 👤 PROFIL UTILISATEUR (Général)
 
-#### ❌ Manque
-- ❌ **Page de profil** pour Formateur et Étudiant
-  - **Backend disponible**: `PUT /api/formateurs/{id}` et `PUT /api/etudiants/{id}`
-  - **Action**: Créer `Profile.jsx` pour chaque rôle
-  - **Fonctionnalités**: Voir et modifier ses informations personnelles
+#### ✅ Implémenté
+- ✅ **Page de profil** pour Formateur et Étudiant
+  - ✅ `Profile.jsx` créé pour Formateur (`/formateur/profile`)
+  - ✅ `Profile.jsx` créé pour Étudiant (`/etudiant/profile`)
+  - ✅ Fonctionnalités: Voir et modifier ses informations personnelles
 
 ---
 
@@ -119,12 +117,12 @@
 - ✅ **Statistiques d'un cours** (`CoursDetails.jsx`) - `GET /api/cours/{code}/statistiques`
 - ✅ **Statistiques générales** (`Statistiques.jsx`) - `GET /api/statistiques/dashboard`
 
-#### ❌ Manque (Optionnel)
-- ❌ **Cours les plus suivis** - `GET /api/statistiques/cours-plus-suivis`
-  - **Action**: Ajouter dans `Statistiques.jsx` (Formateur)
+#### ✅ Implémenté
+- ✅ **Cours les plus suivis** - `GET /api/statistiques/cours-plus-suivis`
+  - ✅ Affiché dans `Statistiques.jsx` (Formateur)
 
-- ❌ **Moyenne générale d'un étudiant** - `GET /api/etudiants/{id}/moyenne`
-  - **Action**: Afficher dans le Dashboard Étudiant
+- ✅ **Moyenne générale d'un étudiant** - `GET /api/etudiants/{id}/moyenne`
+  - ✅ Affichée dans le Dashboard Étudiant avec fallback sur calcul local
 
 ---
 
@@ -159,10 +157,12 @@
 7. **Page de profil utilisateur**
    - `Profile.jsx` pour Formateur et Étudiant
 
-### 🟢 PRIORITÉ BASSE
+### 🟢 PRIORITÉ BASSE - ✅ TERMINÉ
 
-8. **Créer/Modifier un cours** (Formateur)
-   - Si nécessaire (peut être réservé à l'admin)
+8. ✅ **Créer/Modifier un cours** (Formateur)
+   - ✅ Page `CreateCours.jsx` créée
+   - ✅ Page `EditCours.jsx` créée
+   - ✅ Boutons ajoutés dans les pages appropriées
 
 9. **Recherche d'étudiants** (Formateur)
    - Dans la page de gestion des notes
@@ -188,9 +188,9 @@
 - ✅ `DELETE /api/inscriptions/{id}` - Désinscription - **UTILISÉ**
 
 ### Cours
-- `POST /api/cours` - Créer un cours (si nécessaire)
-- `PUT /api/cours/{code}` - Modifier un cours (si nécessaire)
-- `GET /api/cours/search/titre?titre=...` - Recherche par titre
+- ✅ `POST /api/cours` - Créer un cours - **UTILISÉ**
+- ✅ `PUT /api/cours/{code}` - Modifier un cours - **UTILISÉ**
+- ✅ `GET /api/cours/search/titre?titre=...` - Recherche par titre - **UTILISÉ**
 
 ### Recherche
 - `GET /api/etudiants/search/nom?nom=...` - Recherche d'étudiants
@@ -213,13 +213,13 @@
 2. ✅ Modifier notes
 3. ✅ Désinscription étudiant
 
-### Phase 2 (Important) - 🔄 EN COURS
-4. Filtres par date
-5. Recherche de cours
-6. Page de profil
+### Phase 2 (Important) - ✅ TERMINÉ
+4. ✅ Filtres par date
+5. ✅ Recherche de cours
+6. ✅ Page de profil
 
-### Phase 3 (Amélioration)
-7. Statistiques avancées
-8. Recherche d'étudiants
-9. Création/Modification cours (si nécessaire)
+### Phase 3 (Amélioration) - ✅ TERMINÉ
+7. ✅ Statistiques avancées
+8. ✅ Recherche d'étudiants
+9. ✅ Création/Modification cours (Formateur)
 

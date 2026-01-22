@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { inscriptionsApi, notesApi, seancesApi } from '../../utils/api.js';
+import { inscriptionsApi, notesApi, seancesApi, etudiantsApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
 import { BookOpen, FileText, Calendar, TrendingUp } from 'lucide-react';
@@ -15,81 +15,85 @@ const EtudiantDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  const etudiantId = useMemo(() => user?.etudiantId || user?.userId || user?.id, [user]);
+
   useEffect(() => {
+    if (!etudiantId) {
+      setLoading(false);
+      return;
+    }
+
     const loadStats = async () => {
       try {
-        // Utiliser etudiantId si disponible, sinon userId
-        const etudiantId = user?.etudiantId || user?.userId || user?.id;
-        console.log('🔍 [ETUDIANT DASHBOARD] EtudiantId utilisé:', etudiantId);
-        console.log('🔍 [ETUDIANT DASHBOARD] User object:', user);
-        
-        if (etudiantId) {
-          const [inscriptionsResponse, notesResponse, seancesResponse] = await Promise.all([
-            inscriptionsApi.getByEtudiant(etudiantId),
-            notesApi.getByEtudiant(etudiantId),
-            seancesApi.getEmploiDuTempsEtudiant(etudiantId),
-          ]);
+        const [inscriptionsResponse, notesResponse, seancesResponse, moyenneResponse] = await Promise.all([
+          inscriptionsApi.getByEtudiant(etudiantId),
+          notesApi.getByEtudiant(etudiantId),
+          seancesApi.getEmploiDuTempsEtudiant(etudiantId),
+          etudiantsApi.getMoyenne(etudiantId).catch(() => ({ data: null })),
+        ]);
 
-          console.log('🔍 [ETUDIANT DASHBOARD] Réponse inscriptions:', inscriptionsResponse);
-          console.log('🔍 [ETUDIANT DASHBOARD] Réponse notes:', notesResponse);
-          console.log('🔍 [ETUDIANT DASHBOARD] Réponse séances:', seancesResponse);
-
-          // Parser les réponses
-          let inscriptions = parseJsonSafely(inscriptionsResponse.data);
-          if (!inscriptions) {
-            inscriptions = [];
-          }
-          const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
-          console.log(`📊 [ETUDIANT DASHBOARD] Inscriptions parsées: ${inscriptionsArray.length}`);
-
-          let notes = parseJsonSafely(notesResponse.data);
-          if (!notes) {
-            notes = [];
-          }
-          const notesArray = Array.isArray(notes) ? notes : [];
-          console.log(`📊 [ETUDIANT DASHBOARD] Notes parsées: ${notesArray.length}`);
-
-          let seances = parseJsonSafely(seancesResponse.data);
-          if (!seances) {
-            seances = [];
-          }
-          const seancesArray = Array.isArray(seances) ? seances : [];
-          console.log(`📊 [ETUDIANT DASHBOARD] Séances parsées: ${seancesArray.length}`);
-
-          const inscriptionsActives = Array.isArray(inscriptionsArray) 
-            ? inscriptionsArray.filter((i) => i.status === 'ACTIVE') 
-            : [];
-          const aujourdhui = new Date().toISOString().split('T')[0];
-          const seancesAujourdhui = seancesArray.filter((s) => s.date === aujourdhui).length;
-
-          const moyenne =
-            notesArray.length > 0
-              ? notesArray.reduce((sum, n) => sum + n.valeur, 0) / notesArray.length
-              : 0;
-
-          console.log(`✅ [ETUDIANT DASHBOARD] Stats calculées:`, {
-            totalCours: inscriptionsActives.length,
-            totalNotes: notesArray.length,
-            moyenne: moyenne.toFixed(2),
-            seancesAujourdhui,
-          });
-
-          setStats({
-            totalCours: inscriptionsActives.length,
-            totalNotes: notesArray.length,
-            moyenne: moyenne.toFixed(2),
-            seancesAujourdhui,
-          });
+        // Parser les réponses
+        let inscriptions = parseJsonSafely(inscriptionsResponse.data);
+        if (!inscriptions) {
+          inscriptions = [];
         }
+        const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
+
+        let notes = parseJsonSafely(notesResponse.data);
+        if (!notes) {
+          notes = [];
+        }
+        const notesArray = Array.isArray(notes) ? notes : [];
+
+        let seances = parseJsonSafely(seancesResponse.data);
+        if (!seances) {
+          seances = [];
+        }
+        const seancesArray = Array.isArray(seances) ? seances : [];
+
+        const inscriptionsActives = Array.isArray(inscriptionsArray) 
+          ? inscriptionsArray.filter((i) => i.status === 'ACTIVE') 
+          : [];
+        const aujourdhui = new Date().toISOString().split('T')[0];
+        const seancesAujourdhui = seancesArray.filter((s) => s.date === aujourdhui).length;
+
+        // Utiliser la moyenne de l'API si disponible, sinon calculer localement
+        let moyenne = 0;
+        if (moyenneResponse?.data) {
+          const moyenneData = parseJsonSafely(moyenneResponse.data);
+          if (typeof moyenneData === 'number') {
+            moyenne = moyenneData;
+          } else if (moyenneData?.moyenne !== undefined) {
+            moyenne = moyenneData.moyenne;
+          }
+        }
+        
+        // Fallback: calculer localement si l'API ne retourne pas de moyenne
+        if (moyenne === 0 && notesArray.length > 0) {
+          moyenne = notesArray.reduce((sum, n) => sum + n.valeur, 0) / notesArray.length;
+        }
+
+        setStats({
+          totalCours: inscriptionsActives.length,
+          totalNotes: notesArray.length,
+          moyenne: moyenne.toFixed(2),
+          seancesAujourdhui,
+        });
       } catch (error) {
-        console.error('❌ [ETUDIANT DASHBOARD] Erreur lors du chargement des statistiques:', error);
+        console.error('Erreur lors du chargement des statistiques:', error);
+        setStats({
+          totalCours: 0,
+          totalNotes: 0,
+          moyenne: 0,
+          seancesAujourdhui: 0,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     loadStats();
-  }, [user]);
+  }, [etudiantId]);
 
   if (loading) {
     return (

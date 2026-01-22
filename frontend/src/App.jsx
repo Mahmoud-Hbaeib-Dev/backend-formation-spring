@@ -13,6 +13,9 @@ import FormateurEditSeance from './pages/formateur/EditSeance.jsx';
 import FormateurNotes from './pages/formateur/Notes.jsx';
 import FormateurEditNote from './pages/formateur/EditNote.jsx';
 import FormateurStatistiques from './pages/formateur/Statistiques.jsx';
+import FormateurProfile from './pages/formateur/Profile.jsx';
+import FormateurCreateCours from './pages/formateur/CreateCours.jsx';
+import FormateurEditCours from './pages/formateur/EditCours.jsx';
 
 // Pages Étudiant
 import EtudiantDashboard from './pages/etudiant/Dashboard.jsx';
@@ -21,6 +24,7 @@ import EtudiantCoursDetails from './pages/etudiant/CoursDetails.jsx';
 import EtudiantInscriptionCours from './pages/etudiant/InscriptionCours.jsx';
 import EtudiantNotes from './pages/etudiant/Notes.jsx';
 import EtudiantPlanning from './pages/etudiant/Planning.jsx';
+import EtudiantProfile from './pages/etudiant/Profile.jsx';
 
 function AppRoutes() {
   const { isAuthenticated, hasRole } = useAuth();
@@ -103,6 +107,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/formateur/profile"
+        element={
+          <ProtectedRoute requiredRole="FORMATEUR">
+            <FormateurProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/formateur/cours/new"
+        element={
+          <ProtectedRoute requiredRole="FORMATEUR">
+            <FormateurCreateCours />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/formateur/cours/:code/edit"
+        element={
+          <ProtectedRoute requiredRole="FORMATEUR">
+            <FormateurEditCours />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Routes Étudiant */}
       <Route
@@ -150,6 +178,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requiredRole="ETUDIANT">
             <EtudiantPlanning />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/etudiant/profile"
+        element={
+          <ProtectedRoute requiredRole="ETUDIANT">
+            <EtudiantProfile />
           </ProtectedRoute>
         }
       />

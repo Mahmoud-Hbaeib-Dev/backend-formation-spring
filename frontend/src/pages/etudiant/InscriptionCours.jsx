@@ -1,76 +1,122 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { coursApi, inscriptionsApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
+import { useDebounce } from '../../hooks/useDebounce.js';
 import Layout from '../../components/Layout.jsx';
-import { BookOpen, Plus, CheckCircle, X, Trash2 } from 'lucide-react';
+import { BookOpen, Plus, CheckCircle, X, Trash2, Search } from 'lucide-react';
 
 const EtudiantInscriptionCours = () => {
   const { user } = useAuth();
   const [coursDisponibles, setCoursDisponibles] = useState([]);
+  const [allCoursDisponibles, setAllCoursDisponibles] = useState([]);
   const [mesInscriptions, setMesInscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inscribing, setInscribing] = useState(null);
   const [desinscribing, setDesinscribing] = useState(null);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  
+  const etudiantId = useMemo(() => user?.etudiantId || user?.userId || user?.id, [user]);
 
   useEffect(() => {
+    if (!etudiantId) {
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
-        const etudiantId = user?.etudiantId || user?.userId || user?.id;
-        console.log('🔍 [ETUDIANT INSCRIPTION] EtudiantId utilisé:', etudiantId);
-        if (etudiantId) {
-          const [allCoursResponse, inscriptionsResponse] = await Promise.all([
-            coursApi.list(),
-            inscriptionsApi.getByEtudiant(etudiantId),
-          ]);
+        const [allCoursResponse, inscriptionsResponse] = await Promise.all([
+          coursApi.list(),
+          inscriptionsApi.getByEtudiant(etudiantId),
+        ]);
 
-          console.log('🔍 [ETUDIANT INSCRIPTION] Réponse cours:', allCoursResponse);
-          console.log('🔍 [ETUDIANT INSCRIPTION] Réponse inscriptions:', inscriptionsResponse);
-
-          // Parser les réponses
-          let allCours = parseJsonSafely(allCoursResponse.data);
-          if (!allCours) {
-            allCours = [];
-          }
-          const allCoursArray = Array.isArray(allCours) ? allCours : [];
-          console.log(`📊 [ETUDIANT INSCRIPTION] Nombre de cours disponibles: ${allCoursArray.length}`);
-
-          let inscriptions = parseJsonSafely(inscriptionsResponse.data);
-          if (!inscriptions) {
-            inscriptions = [];
-          }
-          const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
-          console.log(`📊 [ETUDIANT INSCRIPTION] Nombre d'inscriptions: ${inscriptionsArray.length}`);
-
-          setMesInscriptions(inscriptionsArray);
-          
-          // Filtrer les cours où l'étudiant n'est pas déjà inscrit
-          const inscriptionsActives = Array.isArray(inscriptionsArray)
-            ? inscriptionsArray
-                .filter((i) => i.status === 'ACTIVE')
-                .map((i) => i.cours?.code)
-            : [];
-          
-          const coursNonInscrits = Array.isArray(allCoursArray)
-            ? allCoursArray.filter((c) => !inscriptionsActives.includes(c.code))
-            : [];
-          
-          console.log(`📊 [ETUDIANT INSCRIPTION] Cours non inscrits: ${coursNonInscrits.length}`);
-          setCoursDisponibles(coursNonInscrits);
+        // Parser les réponses
+        let allCours = parseJsonSafely(allCoursResponse.data);
+        if (!allCours) {
+          allCours = [];
         }
+        const allCoursArray = Array.isArray(allCours) ? allCours : [];
+
+        let inscriptions = parseJsonSafely(inscriptionsResponse.data);
+        if (!inscriptions) {
+          inscriptions = [];
+        }
+        const inscriptionsArray = Array.isArray(inscriptions) ? inscriptions : [];
+
+        setMesInscriptions(inscriptionsArray);
+        
+        // Filtrer les cours où l'étudiant n'est pas déjà inscrit
+        const inscriptionsActives = Array.isArray(inscriptionsArray)
+          ? inscriptionsArray
+              .filter((i) => i.status === 'ACTIVE')
+              .map((i) => i.cours?.code)
+          : [];
+        
+        const coursNonInscrits = Array.isArray(allCoursArray)
+          ? allCoursArray.filter((c) => !inscriptionsActives.includes(c.code))
+          : [];
+        
+        setCoursDisponibles(coursNonInscrits);
+        setAllCoursDisponibles(coursNonInscrits);
       } catch (error) {
-        console.error('❌ [ETUDIANT INSCRIPTION] Erreur lors du chargement:', error);
+        console.error('Erreur lors du chargement:', error);
+        setCoursDisponibles([]);
+        setAllCoursDisponibles([]);
+        setMesInscriptions([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user]);
+  }, [etudiantId]);
+
+  // Recherche de cours avec debouncing
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim()) {
+      setCoursDisponibles(allCoursDisponibles);
+      return;
+    }
+
+    const performSearch = async () => {
+      try {
+        const response = await coursApi.searchByTitre(debouncedSearchTerm);
+        let data = parseJsonSafely(response.data);
+        if (!data) {
+          data = [];
+        }
+        const searchResults = Array.isArray(data) ? data : [];
+        
+        // Filtrer pour ne garder que les cours non inscrits
+        const inscriptionsActives = Array.isArray(mesInscriptions)
+          ? mesInscriptions
+              .filter((i) => i.status === 'ACTIVE')
+              .map((i) => i.cours?.code)
+          : [];
+        
+        const filteredResults = searchResults.filter(
+          c => !inscriptionsActives.includes(c.code)
+        );
+        
+        setCoursDisponibles(filteredResults);
+      } catch (error) {
+        console.error('Erreur lors de la recherche:', error);
+        // En cas d'erreur, filtrer localement
+        const filtered = allCoursDisponibles.filter(
+          c => c.titre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+               c.code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        );
+        setCoursDisponibles(filtered);
+      }
+    };
+
+    performSearch();
+  }, [debouncedSearchTerm, allCoursDisponibles, mesInscriptions]);
 
   const reloadData = async () => {
-    const etudiantId = user?.etudiantId || user?.userId || user?.id;
     if (!etudiantId) return;
 
     const [allCoursResponse, inscriptionsResponse] = await Promise.all([
@@ -104,6 +150,7 @@ const EtudiantInscriptionCours = () => {
       : [];
     
     setCoursDisponibles(coursNonInscrits);
+    setAllCoursDisponibles(coursNonInscrits);
   };
 
   const handleInscription = async (coursCode) => {
@@ -111,7 +158,6 @@ const EtudiantInscriptionCours = () => {
     setInscribing(coursCode);
 
     try {
-      const etudiantId = user?.etudiantId || user?.userId || user?.id;
       await inscriptionsApi.inscrire(etudiantId, coursCode);
       await reloadData();
     } catch (err) {
@@ -175,6 +221,28 @@ const EtudiantInscriptionCours = () => {
             {error}
           </div>
         )}
+
+        {/* Barre de recherche */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un cours par titre ou code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Mes inscriptions actives */}
         {inscriptionsActives.length > 0 && (

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { formateursApi, notesApi, etudiantsApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
+import { useDebounce } from '../../hooks/useDebounce.js';
 import Layout from '../../components/Layout.jsx';
-import { BookOpen, User, Plus, Edit } from 'lucide-react';
+import { BookOpen, User, Plus, Edit, Search, X } from 'lucide-react';
 
 const FormateurNotes = () => {
   const { user } = useAuth();
@@ -12,39 +13,48 @@ const FormateurNotes = () => {
   const [cours, setCours] = useState([]);
   const [selectedCours, setSelectedCours] = useState(null);
   const [etudiants, setEtudiants] = useState([]);
+  const [allEtudiants, setAllEtudiants] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [filteredNotes, setFilteredNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [formData, setFormData] = useState({
     etudiantId: '',
     valeur: '',
   });
+  
+  const formateurId = useMemo(() => user?.formateurId || user?.userId || user?.id, [user]);
 
   useEffect(() => {
+    if (!formateurId) {
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
-        const formateurId = user?.formateurId || user?.userId || user?.id;
-        if (formateurId) {
-          const response = await formateursApi.getCours(formateurId);
-          let coursData = parseJsonSafely(response.data);
-          if (!coursData) {
-            coursData = [];
-          }
-          const coursArray = Array.isArray(coursData) ? coursData : [];
-          setCours(coursArray);
-          if (coursArray.length > 0) {
-            setSelectedCours(coursArray[0].code);
-          }
+        const response = await formateursApi.getCours(formateurId);
+        let coursData = parseJsonSafely(response.data);
+        if (!coursData) {
+          coursData = [];
+        }
+        const coursArray = Array.isArray(coursData) ? coursData : [];
+        setCours(coursArray);
+        if (coursArray.length > 0) {
+          setSelectedCours(coursArray[0].code);
         }
       } catch (error) {
         console.error('Erreur lors du chargement:', error);
+        setCours([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user]);
+  }, [formateurId]);
 
   useEffect(() => {
     const loadNotes = async () => {
@@ -68,7 +78,9 @@ const FormateurNotes = () => {
           const notesArray = Array.isArray(notesData) ? notesData : [];
           const etudiantsArray = Array.isArray(etudiantsData) ? etudiantsData : [];
           setNotes(notesArray);
+          setFilteredNotes(notesArray);
           setEtudiants(etudiantsArray);
+          setAllEtudiants(etudiantsArray);
         } catch (error) {
           console.error('Erreur lors du chargement des notes:', error);
         }
@@ -77,6 +89,53 @@ const FormateurNotes = () => {
 
     loadNotes();
   }, [selectedCours]);
+
+  // Recherche d'étudiants dans les notes (filtrage local, pas besoin de debounce)
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim()) {
+      setFilteredNotes(notes);
+      return;
+    }
+
+    const filtered = notes.filter(note => {
+      const nomComplet = `${note.etudiant?.nom || ''} ${note.etudiant?.prenom || ''}`.toLowerCase();
+      const matricule = (note.etudiant?.matricule || '').toLowerCase();
+      const search = debouncedSearchTerm.toLowerCase();
+      return nomComplet.includes(search) || matricule.includes(search);
+    });
+
+    setFilteredNotes(filtered);
+  }, [debouncedSearchTerm, notes]);
+
+  // Recherche d'étudiants pour le formulaire (avec debounce)
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim() || !showForm) {
+      setEtudiants(allEtudiants);
+      return;
+    }
+
+    const performSearch = async () => {
+      try {
+        const response = await etudiantsApi.searchByNom(debouncedSearchTerm);
+        let data = parseJsonSafely(response.data);
+        if (!data) {
+          data = [];
+        }
+        const searchResults = Array.isArray(data) ? data : [];
+        setEtudiants(searchResults);
+      } catch (error) {
+        console.error('Erreur lors de la recherche d\'étudiants:', error);
+        // En cas d'erreur, filtrer localement
+        const filtered = allEtudiants.filter(
+          e => `${e.nom} ${e.prenom}`.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+               e.matricule?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        );
+        setEtudiants(filtered);
+      }
+    };
+
+    performSearch();
+  }, [debouncedSearchTerm, allEtudiants, showForm]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,6 +155,7 @@ const FormateurNotes = () => {
       }
       const notesArray = Array.isArray(notesData) ? notesData : [];
       setNotes(notesArray);
+      setFilteredNotes(notesArray);
     } catch (error) {
       alert('Erreur lors de l\'attribution de la note: ' + (error.response?.data?.message || error.message));
     }
@@ -212,12 +272,33 @@ const FormateurNotes = () => {
         {/* Liste des notes */}
         {selectedCours && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold">Notes du cours</h2>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher un étudiant..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
-            {notes.length === 0 ? (
+            {filteredNotes.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
-                Aucune note attribuée pour ce cours
+                {notes.length === 0 
+                  ? 'Aucune note attribuée pour ce cours'
+                  : 'Aucun résultat trouvé pour votre recherche'
+                }
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -242,7 +323,7 @@ const FormateurNotes = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {notes.map((note) => (
+                    {filteredNotes.map((note) => (
                       <tr key={note.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           {note.etudiant?.nom} {note.etudiant?.prenom}
