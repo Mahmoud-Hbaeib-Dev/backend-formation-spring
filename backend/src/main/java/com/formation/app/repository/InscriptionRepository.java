@@ -49,9 +49,9 @@ public interface InscriptionRepository extends JpaRepository<Inscription, String
     /**
      * Trouve toutes les inscriptions d'un étudiant par son ID
      * @param etudiantId l'ID de l'étudiant
-     * @return liste des inscriptions
+     * @return liste des inscriptions avec les relations cours et etudiant chargées
      */
-    @Query("SELECT i FROM Inscription i WHERE i.etudiant.id = :etudiantId")
+    @Query("SELECT i FROM Inscription i JOIN FETCH i.cours JOIN FETCH i.etudiant WHERE i.etudiant.id = :etudiantId")
     List<Inscription> findByEtudiantId(@Param("etudiantId") String etudiantId);
     
     /**

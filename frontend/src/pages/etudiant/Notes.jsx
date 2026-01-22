@@ -19,8 +19,95 @@ const EtudiantNotes = () => {
           const response = await notesApi.getByEtudiant(etudiantId);
           console.log('🔍 [ETUDIANT NOTES] Réponse brute:', response);
           
-          // Parser la réponse si elle est une chaîne JSON
-          let data = parseJsonSafely(response.data);
+          // Parser la réponse - gestion robuste
+          let data = null;
+          
+          // Si la réponse est déjà un tableau, l'utiliser directement
+          if (Array.isArray(response.data)) {
+            data = response.data;
+            console.log('✅ [ETUDIANT NOTES] Réponse déjà un tableau, utilisation directe');
+          } else if (typeof response.data === 'string') {
+            // Si c'est une chaîne, essayer de parser avec parseJsonSafely
+            data = parseJsonSafely(response.data);
+            
+            // Si parseJsonSafely a échoué ou n'a pas récupéré toutes les notes, essayer d'extraire le tableau complet
+            if (!data || (Array.isArray(data) && data.length === 0)) {
+              console.warn('⚠️ [ETUDIANT NOTES] parseJsonSafely a échoué ou retourné vide, tentative d\'extraction du tableau complet');
+              try {
+                // Trouver le début du tableau JSON
+                const arrayStart = response.data.indexOf('[');
+                if (arrayStart !== -1) {
+                  // D'abord, trouver où commence l'objet d'erreur (s'il existe)
+                  let errorStart = -1;
+                  const errorPatterns = ['{"timestamp"', '{"error"', '{"status"', '"timestamp"', '"error"', '"status"'];
+                  for (const pattern of errorPatterns) {
+                    const pos = response.data.indexOf(pattern, arrayStart);
+                    if (pos !== -1 && (errorStart === -1 || pos < errorStart)) {
+                      errorStart = pos;
+                    }
+                  }
+                  
+                  // Extraire le tableau complet en comptant les crochets
+                  let bracketCount = 0;
+                  let inString = false;
+                  let escapeNext = false;
+                  let arrayEnd = -1;
+                  const searchLimit = errorStart !== -1 ? errorStart : response.data.length;
+                  
+                  for (let i = arrayStart; i < searchLimit; i++) {
+                    const char = response.data[i];
+                    
+                    if (escapeNext) {
+                      escapeNext = false;
+                      continue;
+                    }
+                    
+                    if (char === '\\') {
+                      escapeNext = true;
+                      continue;
+                    }
+                    
+                    if (char === '"' && !escapeNext) {
+                      inString = !inString;
+                      continue;
+                    }
+                    
+                    if (!inString) {
+                      if (char === '[') {
+                        bracketCount++;
+                      } else if (char === ']') {
+                        bracketCount--;
+                        if (bracketCount === 0) {
+                          arrayEnd = i;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                  
+                  if (arrayEnd > arrayStart) {
+                    const arrayString = response.data.substring(arrayStart, arrayEnd + 1);
+                    console.log(`🔍 [ETUDIANT NOTES] Tableau extrait (${arrayString.length} caractères), tentative de parsing...`);
+                    try {
+                      const parsedArray = JSON.parse(arrayString);
+                      if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+                        console.log(`✅ [ETUDIANT NOTES] ${parsedArray.length} notes extraites du tableau complet`);
+                        data = parsedArray;
+                      }
+                    } catch (parseError) {
+                      console.warn('⚠️ [ETUDIANT NOTES] Impossible de parser le tableau complet:', parseError.message);
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('❌ [ETUDIANT NOTES] Erreur lors de l\'extraction du tableau complet:', e);
+              }
+            }
+          } else {
+            // Si c'est déjà un objet parsé
+            data = response.data;
+          }
+          
           if (!data) {
             console.warn('⚠️ [ETUDIANT NOTES] Impossible de parser les notes');
             data = [];
