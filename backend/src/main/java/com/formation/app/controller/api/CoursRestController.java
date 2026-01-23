@@ -1,9 +1,15 @@
 package com.formation.app.controller.api;
 
 import com.formation.app.entity.Cours;
+import com.formation.app.entity.Formateur;
 import com.formation.app.entity.Groupe;
 import com.formation.app.entity.Inscription;
 import com.formation.app.entity.Note;
+import com.formation.app.entity.Role;
+import com.formation.app.entity.User;
+import com.formation.app.repository.FormateurRepository;
+import com.formation.app.repository.UserRepository;
+import com.formation.app.security.UserDetailsImpl;
 import com.formation.app.service.CoursService;
 import com.formation.app.service.InscriptionService;
 import com.formation.app.service.NoteService;
@@ -11,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -29,6 +37,8 @@ public class CoursRestController {
     private final CoursService coursService;
     private final InscriptionService inscriptionService;
     private final NoteService noteService;
+    private final UserRepository userRepository;
+    private final FormateurRepository formateurRepository;
     
     /**
      * Liste tous les cours
@@ -59,6 +69,26 @@ public class CoursRestController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR')")
     public ResponseEntity<Cours> createCours(@RequestBody Cours cours) {
+        // Si le formateur n'est pas fourni, l'assigner automatiquement depuis l'utilisateur authentifié
+        if (cours.getFormateur() == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                Role role = userDetails.getRole();
+                
+                // Si c'est un formateur, assigner automatiquement
+                if (role == Role.FORMATEUR) {
+                    User user = userRepository.findById(userDetails.getUserId()).orElse(null);
+                    if (user != null) {
+                        Formateur formateur = formateurRepository.findByUser(user).orElse(null);
+                        if (formateur != null) {
+                            cours.setFormateur(formateur);
+                        }
+                    }
+                }
+            }
+        }
+        
         Cours created = coursService.createCours(cours);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

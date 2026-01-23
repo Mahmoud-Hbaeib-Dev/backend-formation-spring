@@ -1,16 +1,27 @@
 package com.formation.app.controller.api;
 
+import com.formation.app.entity.Cours;
+import com.formation.app.entity.Formateur;
+import com.formation.app.entity.Role;
 import com.formation.app.entity.Seance;
+import com.formation.app.entity.User;
+import com.formation.app.repository.CoursRepository;
+import com.formation.app.repository.FormateurRepository;
+import com.formation.app.repository.UserRepository;
+import com.formation.app.security.UserDetailsImpl;
 import com.formation.app.service.SeanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller REST pour la gestion des séances
@@ -22,6 +33,9 @@ import java.util.List;
 public class SeanceRestController {
     
     private final SeanceService seanceService;
+    private final CoursRepository coursRepository;
+    private final FormateurRepository formateurRepository;
+    private final UserRepository userRepository;
     
     /**
      * Liste toutes les séances
@@ -51,7 +65,54 @@ public class SeanceRestController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'FORMATEUR')")
-    public ResponseEntity<Seance> createSeance(@RequestBody Seance seance) {
+    public ResponseEntity<Seance> createSeance(@RequestBody Map<String, Object> request) {
+        // Créer une nouvelle séance à partir des données de la requête
+        Seance seance = new Seance();
+        seance.setDate(LocalDate.parse((String) request.get("date")));
+        seance.setHeure(java.time.LocalTime.parse((String) request.get("heure")));
+        seance.setSalle((String) request.get("salle"));
+        
+        // Extraire le cours depuis la requête
+        Map<String, Object> coursMap = (Map<String, Object>) request.get("cours");
+        if (coursMap != null && coursMap.get("code") != null) {
+            String coursCode = (String) coursMap.get("code");
+            Cours cours = coursRepository.findByCode(coursCode)
+                    .orElseThrow(() -> new com.formation.app.exception.ResourceNotFoundException("Cours", "code", coursCode));
+            seance.setCours(cours);
+        } else {
+            throw new com.formation.app.exception.BadRequestException("Le cours est obligatoire");
+        }
+        
+        // Extraire le formateur depuis la requête ou utiliser l'utilisateur authentifié
+        Map<String, Object> formateurMap = (Map<String, Object>) request.get("formateur");
+        Formateur formateur = null;
+        
+        if (formateurMap != null && formateurMap.get("id") != null) {
+            String formateurId = (String) formateurMap.get("id");
+            formateur = formateurRepository.findById(formateurId)
+                    .orElseThrow(() -> new com.formation.app.exception.ResourceNotFoundException("Formateur", "id", formateurId));
+        } else {
+            // Si le formateur n'est pas fourni, l'assigner automatiquement depuis l'utilisateur authentifié
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                Role role = userDetails.getRole();
+                
+                if (role == Role.FORMATEUR) {
+                    User user = userRepository.findById(userDetails.getUserId()).orElse(null);
+                    if (user != null) {
+                        formateur = formateurRepository.findByUser(user).orElse(null);
+                    }
+                }
+            }
+        }
+        
+        if (formateur == null) {
+            throw new com.formation.app.exception.BadRequestException("Le formateur est obligatoire");
+        }
+        
+        seance.setFormateur(formateur);
+        
         Seance created = seanceService.createSeance(seance);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

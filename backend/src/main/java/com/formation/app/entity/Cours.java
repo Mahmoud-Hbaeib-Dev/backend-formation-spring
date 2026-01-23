@@ -38,7 +38,7 @@ public class Cours {
     
     // Relation ManyToOne avec Session
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", nullable = false)
+    @JoinColumn(name = "session_id", nullable = true)
     @JsonIgnore
     private Session session;
     

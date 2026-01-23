@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { coursApi, notesApi } from '../../utils/api.js';
+import { coursApi, notesApi, statistiquesApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
-import { BookOpen, Users, FileText, ArrowLeft, BarChart3 } from 'lucide-react';
+import { BookOpen, Users, FileText, ArrowLeft, BarChart3, Download } from 'lucide-react';
 
 const FormateurCoursDetails = () => {
   const { code } = useParams();
@@ -72,6 +72,17 @@ const FormateurCoursDetails = () => {
     );
   }
 
+  const handleDownloadPDF = async () => {
+    try {
+      if (code) {
+        await statistiquesApi.downloadRapportCours(code);
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du PDF:', error);
+      alert('Erreur lors du téléchargement du rapport PDF');
+    }
+  };
+
   if (!cours) {
     return (
       <Layout>
@@ -101,12 +112,21 @@ const FormateurCoursDetails = () => {
             <h1 className="text-3xl font-bold text-gray-900">{cours.titre}</h1>
             <p className="mt-2 text-gray-600">Code: {cours.code}</p>
           </div>
-          <Link
-            to={`/formateur/cours/${code}/edit`}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Modifier
-          </Link>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Download size={18} />
+              <span>Télécharger le rapport PDF</span>
+            </button>
+            <Link
+              to={`/formateur/cours/${code}/edit`}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Modifier
+            </Link>
+          </div>
         </div>
 
         {/* Statistiques */}

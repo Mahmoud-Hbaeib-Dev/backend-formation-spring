@@ -82,6 +82,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/inscriptions/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT")
                 .requestMatchers("/api/seances/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT")
                 .requestMatchers("/api/notes/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT") // Les étudiants peuvent voir leurs notes
+                .requestMatchers("/api/statistiques/rapport-notes/**").hasAnyRole("ADMIN", "FORMATEUR", "ETUDIANT") // Les étudiants peuvent télécharger leur rapport
                 .requestMatchers("/api/statistiques/**").hasAnyRole("ADMIN", "FORMATEUR")
                 .anyRequest().authenticated()
             )

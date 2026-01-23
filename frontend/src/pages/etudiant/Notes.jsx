@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { notesApi } from '../../utils/api.js';
+import { notesApi, statistiquesApi } from '../../utils/api.js';
 import { parseJsonSafely } from '../../utils/jsonParser.js';
 import Layout from '../../components/Layout.jsx';
-import { FileText, TrendingUp } from 'lucide-react';
+import { FileText, TrendingUp, Download } from 'lucide-react';
 
 const EtudiantNotes = () => {
   const { user } = useAuth();
@@ -16,6 +16,7 @@ const EtudiantNotes = () => {
         const etudiantId = user?.etudiantId || user?.userId || user?.id;
         console.log('🔍 [ETUDIANT NOTES] EtudiantId utilisé:', etudiantId);
         if (etudiantId) {
+
           const response = await notesApi.getByEtudiant(etudiantId);
           console.log('🔍 [ETUDIANT NOTES] Réponse brute:', response);
           
@@ -139,6 +140,20 @@ const EtudiantNotes = () => {
       ? notes.reduce((sum, n) => sum + n.valeur, 0) / notes.length
       : 0;
 
+  const handleDownloadPDF = async () => {
+    try {
+      const etudiantId = user?.etudiantId || user?.userId || user?.id;
+      if (etudiantId) {
+        await statistiquesApi.downloadRapportNotes(etudiantId);
+      } else {
+        alert('Impossible de télécharger le rapport: ID étudiant non trouvé');
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du PDF:', error);
+      alert('Erreur lors du téléchargement du rapport PDF');
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -152,9 +167,20 @@ const EtudiantNotes = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Notes</h1>
-          <p className="mt-2 text-gray-600">Consultez toutes vos notes</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Mes Notes</h1>
+            <p className="mt-2 text-gray-600">Consultez toutes vos notes</p>
+          </div>
+          {notes.length > 0 && (
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <Download size={20} />
+              <span>Télécharger le rapport PDF</span>
+            </button>
+          )}
         </div>
 
         {/* Carte moyenne */}

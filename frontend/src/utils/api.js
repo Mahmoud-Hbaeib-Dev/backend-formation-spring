@@ -146,6 +146,35 @@ export const statistiquesApi = {
   getCoursPlusSuivis: () => api.get('/statistiques/cours-plus-suivis'),
   getTauxReussite: (coursCode) =>
     api.get(`/statistiques/taux-reussite/${coursCode}`),
+  // PDF Reports
+  downloadRapportNotes: async (etudiantId) => {
+    const response = await api.get(`/statistiques/rapport-notes/${etudiantId}`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `rapport-notes-${etudiantId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+  downloadRapportCours: async (coursCode) => {
+    const response = await api.get(`/statistiques/rapport-cours/${coursCode}`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `rapport-cours-${coursCode}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };
 
 // Diagnostic (/api/diagnostic/**)

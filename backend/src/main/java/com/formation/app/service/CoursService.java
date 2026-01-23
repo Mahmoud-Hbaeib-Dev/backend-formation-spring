@@ -49,19 +49,26 @@ public class CoursService {
             cours.setCode("COURS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         }
         
-        // Vérifier que le formateur existe
-        if (cours.getFormateur() != null && cours.getFormateur().getId() != null) {
+        // Vérifier que le formateur existe et est défini (obligatoire)
+        if (cours.getFormateur() == null) {
+            throw new BadRequestException("Le formateur est obligatoire pour créer un cours");
+        }
+        
+        if (cours.getFormateur().getId() != null) {
             Formateur formateur = formateurRepository.findById(cours.getFormateur().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Formateur", "id", cours.getFormateur().getId()));
             cours.setFormateur(formateur);
+        } else {
+            throw new BadRequestException("L'ID du formateur est obligatoire");
         }
         
-        // Vérifier que la session existe
+        // Vérifier que la session existe (optionnelle)
         if (cours.getSession() != null && cours.getSession().getId() != null) {
             Session session = sessionRepository.findById(cours.getSession().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Session", "id", cours.getSession().getId()));
             cours.setSession(session);
         }
+        // Si la session n'est pas fournie, elle reste null (nullable = true)
         
         return coursRepository.save(cours);
     }
