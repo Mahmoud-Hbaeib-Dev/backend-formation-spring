@@ -166,7 +166,7 @@ public class SecurityConfig {
     @org.springframework.core.annotation.Order(4)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/test", "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**", "/", "/error")
+            .securityMatcher("/test", "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**", "/", "/error", "/favicon.ico")
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()

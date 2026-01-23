@@ -43,6 +43,20 @@ public interface FormateurRepository extends JpaRepository<Formateur, String> {
     boolean existsByEmail(String email);
     
     /**
+     * Trouve un formateur par son matricule
+     * @param matricule le matricule du formateur
+     * @return Optional contenant le formateur si trouvé
+     */
+    Optional<Formateur> findByMatricule(String matricule);
+    
+    /**
+     * Vérifie si un formateur existe avec ce matricule
+     * @param matricule le matricule à vérifier
+     * @return true si le formateur existe
+     */
+    boolean existsByMatricule(String matricule);
+    
+    /**
      * Trouve un formateur par son utilisateur associé
      * @param user l'utilisateur associé
      * @return Optional contenant le formateur si trouvé

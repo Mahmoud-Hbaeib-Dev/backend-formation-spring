@@ -76,17 +76,17 @@ public class DataInitializer implements CommandLineRunner {
         // Chercher par email au lieu de l'ID car l'ID peut être un UUID
         Formateur formateur1 = formateurRepository.findByEmail("dupont@formation.com")
             .orElseGet(() -> {
-                Formateur f = new Formateur(null, "Dupont", "Java", "dupont@formation.com");
+                Formateur f = new Formateur(null, null, "Dupont", "Java", "dupont@formation.com");
                 return formateurService.createFormateur(f);
             });
         Formateur formateur2 = formateurRepository.findByEmail("martin@formation.com")
             .orElseGet(() -> {
-                Formateur f = new Formateur(null, "Martin", "Spring Boot", "martin@formation.com");
+                Formateur f = new Formateur(null, null, "Martin", "Spring Boot", "martin@formation.com");
                 return formateurService.createFormateur(f);
             });
         Formateur formateur3 = formateurRepository.findByEmail("bernard@formation.com")
             .orElseGet(() -> {
-                Formateur f = new Formateur(null, "Bernard", "Base de données", "bernard@formation.com");
+                Formateur f = new Formateur(null, null, "Bernard", "Base de données", "bernard@formation.com");
                 return formateurService.createFormateur(f);
             });
         
@@ -133,20 +133,20 @@ public class DataInitializer implements CommandLineRunner {
         // Afficher les credentials des formateurs
         log.info("📋 Credentials Formateurs:");
         if (formateur1.getUser() != null) {
-            log.info("   - Formateur 1 (Dupont): Login: {}, Password: {}, Email: {}", 
-                formateur1.getUser().getLogin(), formateur1.getUser().getLogin(), formateur1.getEmail());
+            log.info("   - Formateur 1 (Dupont): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                formateur1.getMatricule(), formateur1.getUser().getLogin(), formateur1.getMatricule(), formateur1.getEmail());
         } else {
             log.warn("   - Formateur 1 (Dupont): PAS DE USER!");
         }
         if (formateur2.getUser() != null) {
-            log.info("   - Formateur 2 (Martin): Login: {}, Password: {}, Email: {}", 
-                formateur2.getUser().getLogin(), formateur2.getUser().getLogin(), formateur2.getEmail());
+            log.info("   - Formateur 2 (Martin): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                formateur2.getMatricule(), formateur2.getUser().getLogin(), formateur2.getMatricule(), formateur2.getEmail());
         } else {
             log.warn("   - Formateur 2 (Martin): PAS DE USER!");
         }
         if (formateur3.getUser() != null) {
-            log.info("   - Formateur 3 (Bernard): Login: {}, Password: {}, Email: {}", 
-                formateur3.getUser().getLogin(), formateur3.getUser().getLogin(), formateur3.getEmail());
+            log.info("   - Formateur 3 (Bernard): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                formateur3.getMatricule(), formateur3.getUser().getLogin(), formateur3.getMatricule(), formateur3.getEmail());
         } else {
             log.warn("   - Formateur 3 (Bernard): PAS DE USER!");
         }
@@ -258,26 +258,26 @@ public class DataInitializer implements CommandLineRunner {
         // Afficher les credentials des étudiants
         log.info("📋 Credentials Étudiants:");
         if (etudiant1.getUser() != null) {
-            log.info("   - Étudiant 1 (MAT001): Login: {}, Password: {}, Email: {}", 
-                etudiant1.getUser().getLogin(), etudiant1.getUser().getLogin(), etudiant1.getEmail());
+            log.info("   - Étudiant 1 (MAT001): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                etudiant1.getMatricule(), etudiant1.getUser().getLogin(), etudiant1.getMatricule(), etudiant1.getEmail());
         } else {
             log.warn("   - Étudiant 1 (MAT001): PAS DE USER!");
         }
         if (etudiant2.getUser() != null) {
-            log.info("   - Étudiant 2 (MAT002): Login: {}, Password: {}, Email: {}", 
-                etudiant2.getUser().getLogin(), etudiant2.getUser().getLogin(), etudiant2.getEmail());
+            log.info("   - Étudiant 2 (MAT002): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                etudiant2.getMatricule(), etudiant2.getUser().getLogin(), etudiant2.getMatricule(), etudiant2.getEmail());
         } else {
             log.warn("   - Étudiant 2 (MAT002): PAS DE USER!");
         }
         if (etudiant3.getUser() != null) {
-            log.info("   - Étudiant 3 (MAT003): Login: {}, Password: {}, Email: {}", 
-                etudiant3.getUser().getLogin(), etudiant3.getUser().getLogin(), etudiant3.getEmail());
+            log.info("   - Étudiant 3 (MAT003): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                etudiant3.getMatricule(), etudiant3.getUser().getLogin(), etudiant3.getMatricule(), etudiant3.getEmail());
         } else {
             log.warn("   - Étudiant 3 (MAT003): PAS DE USER!");
         }
         if (etudiant4.getUser() != null) {
-            log.info("   - Étudiant 4 (MAT004): Login: {}, Password: {}, Email: {}", 
-                etudiant4.getUser().getLogin(), etudiant4.getUser().getLogin(), etudiant4.getEmail());
+            log.info("   - Étudiant 4 (MAT004): Matricule: {}, Login: {}, Password: {}, Email: {}", 
+                etudiant4.getMatricule(), etudiant4.getUser().getLogin(), etudiant4.getMatricule(), etudiant4.getEmail());
         } else {
             log.warn("   - Étudiant 4 (MAT004): PAS DE USER!");
         }

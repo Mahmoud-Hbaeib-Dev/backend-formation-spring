@@ -28,6 +28,20 @@ public class FormateurService {
      * Crée un nouveau formateur
      */
     public Formateur createFormateur(Formateur formateur) {
+        // Générer un matricule automatiquement si non fourni
+        if (formateur.getMatricule() == null || formateur.getMatricule().isEmpty()) {
+            String matricule;
+            do {
+                matricule = "FORM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            } while (formateurRepository.existsByMatricule(matricule));
+            formateur.setMatricule(matricule);
+        } else {
+            // Vérifier l'unicité du matricule si fourni manuellement
+            if (formateurRepository.existsByMatricule(formateur.getMatricule())) {
+                throw new BadRequestException("Un formateur avec ce matricule existe déjà");
+            }
+        }
+        
         // Vérifier l'unicité de l'email
         if (formateurRepository.existsByEmail(formateur.getEmail())) {
             throw new BadRequestException("Un formateur avec cet email existe déjà");
@@ -40,16 +54,20 @@ public class FormateurService {
         
         // Créer un User pour le formateur si non existant
         if (formateur.getUser() == null) {
-            // Générer un login basé sur l'email (partie avant @)
-            String login = formateur.getEmail().split("@")[0];
-            String password = login; // Mot de passe par défaut = login
+            // Utiliser le matricule en minuscules comme login et password
+            String login = formateur.getMatricule().toLowerCase();
+            String password = formateur.getMatricule().toLowerCase(); // Le password sera hashé par UserService
             
-            // Vérifier si le login existe déjà, ajouter un suffixe si nécessaire
-            int suffix = 1;
-            String originalLogin = login;
-            while (userService.getUserByLogin(login).isPresent()) {
-                login = originalLogin + suffix;
-                suffix++;
+            // Vérifier si le login existe déjà (peu probable mais on vérifie)
+            if (userService.getUserByLogin(login).isPresent()) {
+                // Si le login existe, générer un nouveau matricule unique
+                String matricule;
+                do {
+                    matricule = "FORM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                } while (formateurRepository.existsByMatricule(matricule) || userService.getUserByLogin(matricule.toLowerCase()).isPresent());
+                formateur.setMatricule(matricule);
+                login = matricule.toLowerCase();
+                password = matricule.toLowerCase();
             }
             
             User user = userService.createUser(login, password, Role.FORMATEUR);

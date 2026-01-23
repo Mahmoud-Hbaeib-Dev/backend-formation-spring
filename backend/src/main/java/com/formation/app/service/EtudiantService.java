@@ -29,9 +29,18 @@ public class EtudiantService {
      * Crée un nouvel étudiant
      */
     public Etudiant createEtudiant(Etudiant etudiant) {
-        // Vérifier l'unicité du matricule
-        if (etudiantRepository.existsByMatricule(etudiant.getMatricule())) {
-            throw new BadRequestException("Un étudiant avec ce matricule existe déjà");
+        // Générer un matricule automatiquement si non fourni
+        if (etudiant.getMatricule() == null || etudiant.getMatricule().isEmpty()) {
+            String matricule;
+            do {
+                matricule = "ETUD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            } while (etudiantRepository.existsByMatricule(matricule));
+            etudiant.setMatricule(matricule);
+        } else {
+            // Vérifier l'unicité du matricule si fourni manuellement
+            if (etudiantRepository.existsByMatricule(etudiant.getMatricule())) {
+                throw new BadRequestException("Un étudiant avec ce matricule existe déjà");
+            }
         }
         
         // Vérifier l'unicité de l'email
@@ -51,13 +60,20 @@ public class EtudiantService {
         
         // Créer un User pour l'étudiant si non existant
         if (etudiant.getUser() == null) {
-            // Générer un login basé sur le matricule ou l'email
+            // Utiliser le matricule en minuscules comme login et password
             String login = etudiant.getMatricule().toLowerCase();
-            String password = etudiant.getMatricule().toLowerCase(); // Mot de passe par défaut = matricule
+            String password = etudiant.getMatricule().toLowerCase(); // Le password sera hashé par UserService
             
-            // Vérifier si le login existe déjà, sinon utiliser l'email
+            // Vérifier si le login existe déjà (peu probable mais on vérifie)
             if (userService.getUserByLogin(login).isPresent()) {
-                login = etudiant.getEmail().split("@")[0]; // Utiliser la partie avant @ de l'email
+                // Si le login existe, générer un nouveau matricule unique
+                String matricule;
+                do {
+                    matricule = "ETUD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                } while (etudiantRepository.existsByMatricule(matricule) || userService.getUserByLogin(matricule.toLowerCase()).isPresent());
+                etudiant.setMatricule(matricule);
+                login = matricule.toLowerCase();
+                password = matricule.toLowerCase();
             }
             
             User user = userService.createUser(login, password, Role.ETUDIANT);
