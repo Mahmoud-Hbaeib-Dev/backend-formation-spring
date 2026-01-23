@@ -91,9 +91,12 @@ public class DataInitializer implements CommandLineRunner {
             });
         
         // S'assurer que les formateurs ont des Users
+        // Note: Normalement, FormateurService.createFormateur() crée déjà le User avec le matricule
+        // Ce code est un fallback au cas où le User n'existerait pas
         if (formateur1.getUser() == null) {
             log.warn("⚠️ Formateur 1 (Dupont) n'a pas de User, création...");
-            String login = formateur1.getEmail().split("@")[0];
+            // Utiliser le matricule en minuscules (cohérent avec FormateurService)
+            String login = formateur1.getMatricule() != null ? formateur1.getMatricule().toLowerCase() : formateur1.getEmail().split("@")[0];
             try {
                 User user = userService.createUser(login, login, Role.FORMATEUR);
                 formateur1.setUser(user);
@@ -105,7 +108,8 @@ public class DataInitializer implements CommandLineRunner {
         }
         if (formateur2.getUser() == null) {
             log.warn("⚠️ Formateur 2 (Martin) n'a pas de User, création...");
-            String login = formateur2.getEmail().split("@")[0];
+            // Utiliser le matricule en minuscules (cohérent avec FormateurService)
+            String login = formateur2.getMatricule() != null ? formateur2.getMatricule().toLowerCase() : formateur2.getEmail().split("@")[0];
             try {
                 User user = userService.createUser(login, login, Role.FORMATEUR);
                 formateur2.setUser(user);
@@ -117,7 +121,8 @@ public class DataInitializer implements CommandLineRunner {
         }
         if (formateur3.getUser() == null) {
             log.warn("⚠️ Formateur 3 (Bernard) n'a pas de User, création...");
-            String login = formateur3.getEmail().split("@")[0];
+            // Utiliser le matricule en minuscules (cohérent avec FormateurService)
+            String login = formateur3.getMatricule() != null ? formateur3.getMatricule().toLowerCase() : formateur3.getEmail().split("@")[0];
             try {
                 User user = userService.createUser(login, login, Role.FORMATEUR);
                 formateur3.setUser(user);

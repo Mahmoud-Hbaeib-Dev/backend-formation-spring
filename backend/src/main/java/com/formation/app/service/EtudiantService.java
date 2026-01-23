@@ -7,6 +7,7 @@ import com.formation.app.exception.BadRequestException;
 import com.formation.app.exception.ResourceNotFoundException;
 import com.formation.app.repository.EtudiantRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +21,12 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class EtudiantService {
     
     private final EtudiantRepository etudiantRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
     
     /**
      * Crée un nouvel étudiant
@@ -80,7 +83,20 @@ public class EtudiantService {
             etudiant.setUser(user);
         }
         
-        return etudiantRepository.save(etudiant);
+        Etudiant saved = etudiantRepository.save(etudiant);
+        
+        // Envoyer un email avec les identifiants si l'utilisateur vient d'être créé
+        if (saved.getUser() != null) {
+            try {
+                notificationService.sendEtudiantCredentials(saved);
+            } catch (Exception e) {
+                log.error("❌ Erreur lors de l'envoi de l'email de bienvenue à l'étudiant {}: {}", 
+                    saved.getEmail(), e.getMessage());
+                // Ne pas faire échouer la création si l'email échoue
+            }
+        }
+        
+        return saved;
     }
     
     /**

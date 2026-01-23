@@ -115,5 +115,12 @@ public interface SeanceRepository extends JpaRepository<Seance, String> {
     @Query("SELECT s FROM Seance s WHERE s.date BETWEEN :dateDebut AND :dateFin ORDER BY s.date, s.heure")
     List<Seance> findByDateBetween(@Param("dateDebut") LocalDate dateDebut, 
                                     @Param("dateFin") LocalDate dateFin);
+    
+    /**
+     * Trouve toutes les séances, triées par date et heure
+     * @return liste de toutes les séances
+     */
+    @Query("SELECT s FROM Seance s ORDER BY s.date, s.heure")
+    List<Seance> findAllOrderByDateAndHeure();
 }
 

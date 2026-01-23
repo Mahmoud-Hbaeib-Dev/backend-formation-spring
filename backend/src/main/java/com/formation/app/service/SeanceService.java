@@ -216,5 +216,43 @@ public class SeanceService {
     public List<Seance> getSeancesBetweenDates(LocalDate dateDebut, LocalDate dateFin) {
         return seanceRepository.findByDateBetween(dateDebut, dateFin);
     }
+    
+    /**
+     * Trouve toutes les séances
+     */
+    @Transactional(readOnly = true)
+    public List<Seance> getAllSeances() {
+        List<Seance> seances = seanceRepository.findAllOrderByDateAndHeure();
+        // Forcer le chargement des relations LAZY dans la transaction
+        for (Seance s : seances) {
+            if (s.getCours() != null) {
+                s.getCours().getCode(); // Force l'initialisation
+            }
+            if (s.getFormateur() != null) {
+                s.getFormateur().getNom(); // Force l'initialisation
+            }
+        }
+        return seances;
+    }
+    
+    /**
+     * Trouve toutes les séances futures (à partir d'aujourd'hui)
+     */
+    @Transactional(readOnly = true)
+    public List<Seance> getSeancesFutures() {
+        LocalDate aujourdhui = LocalDate.now();
+        List<Seance> seances = seanceRepository.findByDateBetween(aujourdhui, aujourdhui.plusYears(1));
+        // Forcer le chargement des relations LAZY dans la transaction
+        for (Seance s : seances) {
+            if (s.getCours() != null) {
+                s.getCours().getCode(); // Force l'initialisation
+                s.getCours().getTitre(); // Force l'initialisation
+            }
+            if (s.getFormateur() != null) {
+                s.getFormateur().getNom(); // Force l'initialisation
+            }
+        }
+        return seances;
+    }
 }
 

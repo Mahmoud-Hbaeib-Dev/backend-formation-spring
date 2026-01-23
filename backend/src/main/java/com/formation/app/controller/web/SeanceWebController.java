@@ -24,7 +24,8 @@ public class SeanceWebController {
     
     @GetMapping
     public String listSeances(Model model) {
-        List<Seance> seances = seanceService.getSeancesByDate(LocalDate.now());
+        // Récupérer toutes les séances futures (à partir d'aujourd'hui) triées par date et heure
+        List<Seance> seances = seanceService.getSeancesFutures();
         model.addAttribute("seances", seances);
         model.addAttribute("title", "Gestion des Séances");
         return "admin/seances/list";

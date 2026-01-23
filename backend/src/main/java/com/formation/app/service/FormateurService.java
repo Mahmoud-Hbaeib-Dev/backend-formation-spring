@@ -7,6 +7,7 @@ import com.formation.app.exception.BadRequestException;
 import com.formation.app.exception.ResourceNotFoundException;
 import com.formation.app.repository.FormateurRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,12 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class FormateurService {
     
     private final FormateurRepository formateurRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
     
     /**
      * Crée un nouveau formateur
@@ -74,7 +77,20 @@ public class FormateurService {
             formateur.setUser(user);
         }
         
-        return formateurRepository.save(formateur);
+        Formateur saved = formateurRepository.save(formateur);
+        
+        // Envoyer un email avec les identifiants si l'utilisateur vient d'être créé
+        if (saved.getUser() != null) {
+            try {
+                notificationService.sendFormateurCredentials(saved);
+            } catch (Exception e) {
+                log.error("❌ Erreur lors de l'envoi de l'email de bienvenue au formateur {}: {}", 
+                    saved.getEmail(), e.getMessage());
+                // Ne pas faire échouer la création si l'email échoue
+            }
+        }
+        
+        return saved;
     }
     
     /**
